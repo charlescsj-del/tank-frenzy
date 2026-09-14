@@ -5,6 +5,9 @@ const shellColors=FIELD.palette.map(p=>({body:p.bullet,glow:p.bullet,trail:p.bul
 let walls=FIELD.walls,spawns=FIELD.spawns,mapId=null;
 const keys=new Set(),moveKeys=new Set(['KeyW','KeyA','KeyS','KeyD']);
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const touchMedia=matchMedia('(pointer: coarse) and (hover: none)');
+const sticks={move:{id:null,x:0,y:0},aim:{id:null,x:0,y:0}};
+let touchAim=null,expanded=false;
 let cssW=1120,cssH=610,scale=1,offsetX=0,offsetY=0;
 let tanks=[],shells=[],particles=[],tracks=[],shake=0,last=0,sound=true,audioReady=false,audioContext;
 let socket=null,myId=null,token=null,joined=false,connecting=false,intentional=false,retry=0,retryTimer;
@@ -20,10 +23,10 @@ function send(data){if(socket?.readyState===WebSocket.OPEN&&socket.bufferedAmoun
 function sendInput(){
   if(!joined)return;
   const me=tanks.find(t=>t.id===myId);
-  const aim=pointer.active?pointer:{x:(me?.x||500)+Math.cos(me?.aim||0)*150,y:(me?.y||330)+Math.sin(me?.aim||0)*150};
-  send({type:'input',seq:++seq,x:Number(keys.has('KeyD'))-Number(keys.has('KeyA')),y:Number(keys.has('KeyS'))-Number(keys.has('KeyW')),aimX:aim.x,aimY:aim.y,fire:firing});
+  const aim=touchAim?{x:(me?.x??500)+touchAim.x*150,y:(me?.y??330)+touchAim.y*150}:pointer.active?pointer:{x:(me?.x??500)+Math.cos(me?.aim||0)*150,y:(me?.y??330)+Math.sin(me?.aim||0)*150};
+  send({type:'input',seq:++seq,x:Math.max(-1,Math.min(1,sticks.move.x+Number(keys.has('KeyD'))-Number(keys.has('KeyA')))),y:Math.max(-1,Math.min(1,sticks.move.y+Number(keys.has('KeyS'))-Number(keys.has('KeyW')))),aimX:aim.x,aimY:aim.y,fire:firing||Math.hypot(sticks.aim.x,sticks.aim.y)>0});
 }
-function release(){keys.clear();firing=false;stopMovementSound();sendInput();}
+function release(){keys.clear();firing=false;for(const name of ['move','aim'])resetStick(name);stopMovementSound();sendInput();}
 function connect(){
   if(connecting||joined)return;
   intentional=false;connecting=true;clearTimeout(retryTimer);
@@ -39,7 +42,7 @@ function connect(){
     let data;try{data=JSON.parse(event.data);}catch{return;}
     if(data.type==='welcome'){
       myId=data.id;token=data.token;seq=Math.max(seq,data.seq+1);joined=true;connecting=false;retry=0;lastEvent=0;rosterSignature='';pointer.active=false;
-      $('overlay').classList.add('hidden');$('leave').hidden=false;canvas.focus({preventScroll:true});
+      touchAim=null;$('overlay').classList.add('hidden');$('leave').hidden=false;updateTouchControls();canvas.focus({preventScroll:true});
       history.replaceState(null,'','?room='+encodeURIComponent(roomCode));sendInput();
     }else if(data.type==='state'){applySnapshot(data);}
     else if(data.type==='pong'){$('latency').textContent=Math.round(performance.now()-data.sent)+' MS';}
@@ -48,7 +51,7 @@ function connect(){
   ws.addEventListener('error',()=>{});
   ws.addEventListener('close',()=>{
     clearTimeout(timeout);if(socket!==ws)return;
-    joined=false;connecting=false;keys.clear();firing=false;stopMovementSound();$('latency').textContent='OFFLINE';
+    joined=false;connecting=false;release();updateTouchControls();$('latency').textContent='OFFLINE';
     if(intentional)return;
     status('CONNECTION LOST');
     if(++retry<=8){networkMessage('Reconnecting...','The connection dropped. Retrying automatically.');retryTimer=setTimeout(connect,Math.min(800*retry,4000));}
@@ -58,6 +61,7 @@ function connect(){
 function leave(){
   intentional=true;clearTimeout(retryTimer);release();send({type:'leave'});socket?.close();socket=null;joined=false;connecting=false;myId=null;token=null;retry=0;
   latest=null;tanks=[];shells=[];tracks=[];$('leave').hidden=true;$('respawn').textContent='';$('latency').textContent='OFFLINE';$('roster').replaceChildren();
+  touchAim=null;updateTouchControls();
   $('roomCount').textContent='0 / 4 PLAYERS';networkMessage('Join the field.','Pick a room code and bring your rivals.',true);status('READY TO CONNECT');
 }
 function applySnapshot(data){
@@ -114,18 +118,91 @@ $('joinForm').addEventListener('submit',e=>{e.preventDefault();audioReady=true;b
 $('leave').addEventListener('click',leave);
 $('sound').addEventListener('click',()=>{sound=!sound;audioReady=true;$('sound').textContent=sound?'SOUND ON':'SOUND OFF';$('sound').setAttribute('aria-pressed',String(sound));if(sound)beep(400,.12);else stopMovementSound();canvas.focus({preventScroll:true});});
 function aimAt(e){
+  if(e.pointerType==='touch')return;
+  touchAim=null;
   const rect=canvas.getBoundingClientRect();
   pointer={...FIELD.unproject((e.clientX-rect.left-offsetX)/scale,(e.clientY-rect.top-offsetY)/scale,22),active:true};
 }
 canvas.addEventListener('pointermove',aimAt);
-canvas.addEventListener('pointerdown',e=>{if(e.button!==0||!joined)return;e.preventDefault();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);aimAt(e);audioReady=true;firing=true;sendInput();});
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.button!==0||!joined)return;e.preventDefault();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);aimAt(e);audioReady=true;firing=true;sendInput();});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{firing=false;sendInput();});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
-window.addEventListener('keydown',e=>{if(!joined||e.target instanceof HTMLInputElement)return;if(moveKeys.has(e.code)){e.preventDefault();keys.add(e.code);if(!e.repeat)sendInput();}if(e.code==='Escape')release();});
+window.addEventListener('keydown',e=>{if(e.code==='Escape'){release();if(expanded)setExpanded(false);}if(!joined||e.target instanceof HTMLInputElement)return;if(moveKeys.has(e.code)){e.preventDefault();keys.add(e.code);if(!e.repeat)sendInput();}});
 window.addEventListener('keyup',e=>{if(moveKeys.has(e.code)){keys.delete(e.code);sendInput();}});
 window.addEventListener('blur',release);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)release();});
 window.addEventListener('pagehide',()=>{release();send({type:'leave'});});
+
+function resetStick(name){
+  const stick=sticks[name],pad=$(name+'Stick'),id=stick.id;
+  stick.id=null;stick.x=0;stick.y=0;
+  pad.style.setProperty('--stick-x','0px');pad.style.setProperty('--stick-y','0px');
+  if(id!==null&&pad.hasPointerCapture(id))pad.releasePointerCapture(id);
+}
+function updateStick(name,e){
+  const stick=sticks[name],pad=$(name+'Stick'),rect=pad.getBoundingClientRect();
+  const radius=rect.width*.32,dx=e.clientX-rect.left-rect.width/2,dy=e.clientY-rect.top-rect.height/2;
+  const distance=Math.hypot(dx,dy),amount=Math.min(1,distance/radius);
+  // A small dead zone prevents firing or drifting from resting thumbs.
+  const power=amount<.2?0:(amount-.2)/.8;
+  stick.x=distance?dx/distance*power:0;stick.y=distance?dy/distance*power:0;
+  pad.style.setProperty('--stick-x',(distance?dx/distance*amount*radius:0)+'px');
+  pad.style.setProperty('--stick-y',(distance?dy/distance*amount*radius:0)+'px');
+  if(name==='aim'&&power){touchAim={x:dx/distance,y:dy/distance};pointer.active=false;}
+}
+for(const name of ['move','aim']){
+  const pad=$(name+'Stick');
+  pad.addEventListener('pointerdown',e=>{
+    if(!touchMedia.matches||!joined||e.pointerType!=='touch'||sticks[name].id!==null)return;
+    e.preventDefault();sticks[name].id=e.pointerId;pad.setPointerCapture(e.pointerId);audioReady=true;updateStick(name,e);sendInput();
+  });
+  pad.addEventListener('pointermove',e=>{if(sticks[name].id===e.pointerId){e.preventDefault();updateStick(name,e);}});
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(type,e=>{
+    if(sticks[name].id!==e.pointerId)return;
+    resetStick(name);sendInput();
+  });
+  pad.addEventListener('contextmenu',e=>e.preventDefault());
+}
+function updateTouchControls(){
+  const mobile=touchMedia.matches;
+  $('thumbControls').hidden=!mobile||!joined;
+  $('mobileHelp').hidden=!mobile;
+  $('desktopHelp').hidden=mobile;
+  $('introControls').textContent=mobile?'Left thumb to move. Right thumb to aim and fire.':'Move with WASD. Aim with your mouse. Click to fire.';
+  $('networkNote').textContent=mobile?'LEFT THUMB / MOVE · RIGHT THUMB / AIM + FIRE':'WASD / MOVE · MOUSE / AIM · LEFT CLICK / FIRE';
+  canvas.setAttribute('aria-label',mobile?'Tank arena. Use the left thumb control to move and the right thumb control to aim and fire.':'Tank arena. Use W A S D to move, point the mouse to aim, and hold left click to fire.');
+}
+touchMedia.addEventListener?.('change',()=>{release();updateTouchControls();});
+updateTouchControls();
+
+function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement;}
+function updateFullscreen(){
+  const active=expanded||fullscreenElement()===$('arena');
+  $('fullscreen').textContent=active?'EXIT FULL SCREEN':'FULL SCREEN';
+  $('fullscreen').setAttribute('aria-pressed',String(active));
+}
+function setExpanded(value){
+  expanded=value;
+  $('arena').classList.toggle('expanded',value);
+  document.body.classList.toggle('arena-expanded',value);
+  $('viewNote').textContent=value?'Expanded view. Your browser does not allow true fullscreen here. Rotate your phone for a wider field.':'';
+  updateFullscreen();
+}
+$('fullscreen').addEventListener('click',async()=>{
+  release();
+  if(expanded){setExpanded(false);return;}
+  if(fullscreenElement()){
+    try{await (document.exitFullscreen||document.webkitExitFullscreen).call(document);}catch{$('viewNote').textContent='Use your browser fullscreen control to exit.';}
+    return;
+  }
+  const arena=$('arena'),request=arena.requestFullscreen||arena.webkitRequestFullscreen;
+  if(request){
+    try{await request.call(arena);$('viewNote').textContent='';updateFullscreen();return;}catch{/* Use an expanded browser view when fullscreen is unavailable. */}
+  }
+  setExpanded(true);
+});
+for(const type of ['fullscreenchange','webkitfullscreenchange'])document.addEventListener(type,()=>{release();updateFullscreen();});
+window.addEventListener('resize',release);
 setInterval(sendInput,1000/30);
 setInterval(()=>{if(joined){send({type:'ping',sent:performance.now()});if(performance.now()-lastSnapshot>4000)socket?.close();}},2000);
 
@@ -195,7 +272,7 @@ function drawTank(t){
   box(t.x,t.y,45,31,10,12,color,t.a);
   let p=local(-13,0);box(...p,11,24,22,2,tint(color,.82),t.a);
   for(let i=-7;i<=7;i+=4){p=local(-13,i);box(...p,7,1.5,24,.4,'#39473b',t.a);}
-  const aim=t.id===myId&&pointer.active?Math.atan2(pointer.y-t.y,pointer.x-t.x):t.aim;
+  const aim=t.id===myId&&touchAim?Math.atan2(touchAim.y,touchAim.x):t.id===myId&&pointer.active?Math.atan2(pointer.y-t.y,pointer.x-t.x):t.aim;
   p=local(3-t.recoil*.4,0,aim);box(...p,23,24,23,11,tint(color,1.13),aim);
   p=local(24-t.recoil,0,aim);box(...p,30,6,27,6,tint(color,.72),aim);
   p=local(38-t.recoil,0,aim);box(...p,5,9,26,8,'#465342',aim);
@@ -208,7 +285,7 @@ function frame(time){
   const smoothing=1-Math.exp(-dt*25);let ownSpeed=0;
   for(const t of tanks){
     const x=t.x,y=t.y;t.x+=(t.targetX-t.x)*smoothing;t.y+=(t.targetY-t.y)*smoothing;
-    if(t.id===myId&&t.hp>0&&keys.size>0)ownSpeed=Math.hypot(t.x-x,t.y-y)/Math.max(dt,.001);
+    if(t.id===myId&&t.hp>0&&(keys.size>0||Math.hypot(sticks.move.x,sticks.move.y)>0))ownSpeed=Math.hypot(t.x-x,t.y-y)/Math.max(dt,.001);
     t.recoil=Math.max(0,t.recoil-28*dt);t.flash=Math.max(0,t.flash-dt);
     if(Math.hypot(t.x-x,t.y-y)>.1&&t.hp>0){t.track+=dt;if(t.track>.08){tracks.push({x:t.x,y:t.y,a:t.a,life:9});t.track=0;}}
   }

@@ -1,5 +1,9 @@
 # IRON / FIELD - Network Arena
 
+## Public Game
+
+Play online at https://tank-frenzy.onrender.com/?room=QUARRY. This link opens the game with the `QUARRY` room code prefilled.
+
 ## Host
 
 Run `npm install` once, then `npm start` in this folder (Node.js 18 or later).
@@ -10,12 +14,14 @@ Keep the server running during play. Stop it with Ctrl+C.
 
 Each player opens the host's address in a separate tab, browser, or device, enters a name, and joins the same room code. Two to four players can battle in a room; one player can practice while waiting. Different room codes create separate matches. The Copy Invite button includes the room code.
 
-On other devices, use the host's LAN address, not localhost. Both devices must be able to reach each other on the network. If Windows prompts for Node.js network access, allow it on your trusted private network. No firewall rules are changed by this project. Public Internet play requires hosting this server somewhere players can reach; no public deployment or router forwarding is configured here.
+On other devices, use the host's LAN address, not localhost. Both devices must be able to reach each other on the network. If Windows prompts for Node.js network access, allow it on your trusted private network. No firewall rules are changed by this project. For public Internet play, use the deployed URL above.
 
 Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room gets a random map, regenerated for every new match. Clear spawn zones and connected lanes keep the arena traversable. All players receive the same map from the server.
 
 ## Controls and Rules
 
+- Phones and tablets with a primary touch input show two thumb controls after joining: drag the left stick to move and the right stick to aim and fire. Release to stop. Mouse/keyboard browsers keep the desktop controls, even in a narrow window.
+- Full Screen expands the arena on desktop and mobile. Where browser fullscreen is unavailable or rejected, it falls back to an expanded view inside the browser; browser bars may remain visible. Use Exit Full Screen to return. Landscape is recommended on phones.
 - W/A/S/D: move up/left/down/right along the unrotated map axes, including diagonal movement.
 - Audio: your own moving tank's engine and track sound, plus opponents' firing sounds. Your own firing sound is muted; impacts and ricochets remain audible.
 - Shell range covers the full map diagonal, and shots into nearby cover ricochet from the barrel's last clear point.

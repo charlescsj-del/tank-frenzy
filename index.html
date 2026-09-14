@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>IRON / FIELD - Network Arena</title>
 <style>
 :root{--paper:#edece5;--ink:#25302b;--muted:#777e73;--line:#d0d3c6;--orange:#e77742;--blue:#5297bd;--green:#455448}
@@ -26,20 +26,67 @@
 #respawn{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);background:#f6f5eced;padding:12px 20px;border-radius:6px;text-align:center;font:12px Consolas,monospace;pointer-events:none;box-shadow:0 6px 20px #20362220}
 #respawn:empty{display:none}.stage canvas{cursor:crosshair}.overlay.hidden{display:none}.bottom{grid-template-columns:1fr 1fr 1.2fr}.network-detail{font-size:11px!important;line-height:1.7;overflow-wrap:anywhere}.network-detail a{color:#486941}.room-empty{font:11px Consolas,monospace;color:#7c856f}.touch{display:none!important}
 @media(max-width:570px){.dialog{padding:15px 20px}.dialog h2{font-size:24px}.dialog p{margin:7px 0;font-size:10px}.join-fields{margin:10px 0}.join-fields input{padding:7px}.room-strip{padding:10px;align-items:flex-start}.room-title{font-size:9px;line-height:1.5}.room-strip .tool{font-size:8px}.scoreboard{padding:9px;gap:6px}.roster-card{min-width:100px;padding:7px}.roster-name{font-size:9px}.roster-stats{font-size:8px}.roster-card .pip{width:12px}.bottom{grid-template-columns:1fr 1fr}.stage canvas{aspect-ratio:1.1}#respawn{bottom:12px;font-size:10px;padding:8px;width:80%}}
+.room-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#viewNote{margin:0;padding:8px 12px;background:#f6f6ef;font-size:11px;color:#4f5c47}
+#viewNote:empty{display:none}
+.thumb-controls{display:none;position:absolute;inset:0;pointer-events:none;z-index:2}
+.thumb-control{position:absolute;bottom:max(20px,env(safe-area-inset-bottom));text-align:center;color:#344632;font:10px Consolas,monospace;letter-spacing:1px}
+.thumb-control:first-child{left:max(18px,env(safe-area-inset-left))}.thumb-control:last-child{right:max(18px,env(safe-area-inset-right))}
+.thumb-pad{--stick-x:0px;--stick-y:0px;position:relative;width:112px;height:112px;border:2px solid #45544880;border-radius:50%;background:#eef0e37a;box-shadow:inset 0 0 0 20px #4554480c;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto;margin-bottom:6px}
+.thumb-pad span{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px;border:1px solid #45544899;border-radius:50%;background:#455448aa;transform:translate(var(--stick-x),var(--stick-y));pointer-events:none}
+#aimStick{border-color:#b9532c88;background:#f8e2d478}#aimStick span{background:#c5683dcc;border-color:#b9532c}
+.mobile-help{grid-column:1/-1;padding:16px;border:1px solid var(--line);border-radius:6px;background:#f6f5ec;font-size:12px;line-height:1.7}.mobile-help p{margin:4px 0;color:#6a765e}
+#desktopHelp{display:contents}
+.arena-expanded{overflow:hidden}
+.game:is(:fullscreen,:-webkit-full-screen,.expanded){display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;border:0;border-radius:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:#c6ceba}
+.game.expanded{position:fixed;inset:0;z-index:1000}
+.game:is(:fullscreen,:-webkit-full-screen,.expanded) .stage{flex:1;min-height:0}
+.game:is(:fullscreen,:-webkit-full-screen,.expanded) canvas{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
+.game:is(:fullscreen,:-webkit-full-screen,.expanded) .room-strip{padding:6px 12px;flex-shrink:0}
+.game:is(:fullscreen,:-webkit-full-screen,.expanded) .scoreboard{min-height:0;padding:5px 12px;gap:6px;flex-wrap:nowrap;overflow-x:auto;flex-shrink:0}
+.game:is(:fullscreen,:-webkit-full-screen,.expanded) .roster-card{padding:5px 8px}
+.game:is(:fullscreen,:-webkit-full-screen,.expanded) .battlebar{padding:6px 12px;flex-shrink:0}
+.overlay{z-index:3;overflow:auto}.dialog{margin:auto}.join-fields input{font-size:16px}
+@media(pointer:coarse) and (hover:none){
+  .thumb-controls{display:block}.tool{min-height:44px;min-width:44px}
+  .page{padding:12px}.intro{padding:16px 0}.intro h1{font-size:32px}
+  .room-strip{flex-wrap:wrap}.room-actions{margin-left:auto}
+  .stage canvas{aspect-ratio:1.05}.stage-label{top:12px;left:12px}.stage-label span{display:none}
+  .arena-tools{top:6px;right:8px}.battlebar>span:last-child{display:none}
+  #respawn{bottom:auto;top:62px;z-index:2}
+  .scoreboard{flex-wrap:nowrap;overflow-x:auto;min-height:0}.roster-card{min-width:105px}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .room-title{font-size:9px}
+}
+@media(pointer:coarse) and (hover:none) and (orientation:landscape){
+  .thumb-pad{width:96px;height:96px}.thumb-control{bottom:10px}
+  .stage canvas{aspect-ratio:1120/610}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .roster-stats{display:none}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .health{margin-top:4px}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .dialog{padding:10px 18px}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .dialog h2{font-size:20px;margin:4px 0}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .dialog p{display:none}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .join-fields{margin:7px 0}
+  .game:is(:fullscreen,:-webkit-full-screen,.expanded) .hint{margin-top:5px}
+}
 </style>
 </head>
 <body>
 <main class="page">
 <header class="masthead"><div class="brand">IRON<span>/</span>FIELD</div><div class="edition"><span><i class="live-dot"></i>NETWORK MULTIPLAYER</span><span>ONE ROOM / 2 - 4 PLAYERS</span></div></header>
-<section class="intro"><div><p class="eyebrow">YOUR TANK. YOUR BROWSER. ONE BATTLEFIELD.</p><h1>Small tanks.<br><span>Big rivalries.</span></h1></div><p>Bring your friends into the field.<br>Move with WASD. Aim with your mouse. Click to fire.</p></section>
-<section class="game" aria-label="Network tank arena">
-<div class="room-strip"><span class="room-title">ROOM <b id="roomCode">QUARRY</b> &nbsp; / &nbsp; <span id="roomCount">0 / 4 PLAYERS</span></span><span><button id="copy" class="tool">COPY INVITE</button> <button id="leave" class="tool" hidden>LEAVE ROOM</button></span></div>
+<section class="intro"><div><p class="eyebrow">YOUR TANK. YOUR BROWSER. ONE BATTLEFIELD.</p><h1>Small tanks.<br><span>Big rivalries.</span></h1></div><p>Bring your friends into the field.<br><span id="introControls">Move with WASD. Aim with your mouse. Click to fire.</span></p></section>
+<section id="arena" class="game" aria-label="Network tank arena">
+<div class="room-strip"><span class="room-title">ROOM <b id="roomCode">QUARRY</b> &nbsp; / &nbsp; <span id="roomCount">0 / 4 PLAYERS</span></span><span class="room-actions"><button id="fullscreen" class="tool" aria-pressed="false">FULL SCREEN</button><button id="copy" class="tool">COPY INVITE</button><button id="leave" class="tool" hidden>LEAVE ROOM</button></span></div>
+<p id="viewNote" role="status"></p>
 <div id="roster" class="scoreboard"><span class="room-empty">Join the room to claim your tank.</span></div>
 <div class="stage">
 <canvas id="game" width="1120" height="610" tabindex="0" aria-label="Tank arena. Use W A S D to move, point the mouse to aim, and hold left click to fire."></canvas>
 <div class="stage-label"><b id="mapLabel">RANDOM MAP / NEW EACH MATCH</b><span>1600 x 1040 / 0.42 SECOND RELOAD</span></div>
 <div class="arena-tools"><button id="sound" class="tool" aria-pressed="true">SOUND ON</button><span class="tool" id="latency">OFFLINE</span></div>
 <div id="respawn" role="status" aria-live="polite"></div>
+<div id="thumbControls" class="thumb-controls" hidden>
+<div class="thumb-control"><div id="moveStick" class="thumb-pad" role="group" aria-label="Move: drag with your left thumb"><span></span></div>MOVE</div>
+<div class="thumb-control"><div id="aimStick" class="thumb-pad" role="group" aria-label="Aim and fire: drag with your right thumb, release to stop firing"><span></span></div>AIM + FIRE</div>
+</div>
 <div id="overlay" class="overlay"><div class="dialog">
 <div id="dialogTag" class="eyebrow">ASSEMBLE YOUR RIVALS</div><h2 id="dialogTitle">Join the field.</h2><p id="dialogText">For 2-4 players, each in their own browser. Share a room code and explore a new random battlefield each match.</p>
 <form id="joinForm"><div id="joinFields" class="join-fields"><label>CALLSIGN<input id="callsign" placeholder="Your name" maxlength="16" autocomplete="off"></label><label>ROOM CODE<input id="roomInput" value="QUARRY" maxlength="16" pattern="[A-Za-z0-9-]+" required autocomplete="off"></label></div><button id="action" class="primary" type="submit">Join arena &gt;</button></form>
@@ -49,8 +96,11 @@
 <div class="battlebar"><span><i class="live-dot"></i><b id="status">READY TO CONNECT</b></span><span>YOUR COLOR = YOUR SHELLS &nbsp; / &nbsp; FIVE-HIT HULLS</span></div>
 </section>
 <section class="bottom">
+<div id="mobileHelp" class="mobile-help" hidden><strong>Two thumbs. Full control.</strong><p>Left thumb to move. Right thumb to aim and fire. Release either control to stop.</p><p>Tap Full Screen and turn your phone sideways for a wider battlefield.</p></div>
+<div id="desktopHelp">
 <div class="control-card"><div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd class="fire">MOVE / STRAFE</kbd></div><div><div class="key-label">EVERY PLAYER</div><h3>Drive your own way.</h3><p>WASD moves in screen directions.<br>Combine keys to move diagonally.</p></div></div>
 <div class="control-card"><div><div class="key-label">INDEPENDENT TURRET</div><h3>Point. Click. Boom.</h3><p>The barrel follows your mouse. Hold left click to fire every 0.42 seconds. Straight map axes match WASD movement. Hear your engine and opponents' shots.</p></div></div>
+</div>
 <div class="control-card"><div><div class="key-label">BRING YOUR FRIENDS</div><h3>Same room. Different screens.</h3><p id="networkLinks" class="network-detail">Open this address in another browser and join the same room. The host keeps this server running.</p></div></div>
 </section>
 <footer><span>FIRST TO 10 / 2 - 4 PLAYERS / NO INSTALL FOR FRIENDS</span><span>IRON / FIELD &copy; 2026</span></footer>
