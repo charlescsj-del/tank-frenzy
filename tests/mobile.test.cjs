@@ -64,6 +64,61 @@ test('desktop hides thumb controls; touch controls wait for joining',()=>{
   mobile.run('joined=false;updateTouchControls()');assert.equal(mobile.elements.get('thumbControls').hidden,true);
 });
 
+test('mobile play uses a compact viewport and restores the page on leaving or switching input',()=>{
+  const c=client(),arena=c.elements.get('arena');
+  assert.equal(arena.classList.contains('mobile-active'),true);
+  assert.equal(c.sandbox.document.body.classList.contains('mobile-playing'),true);
+  assert.equal(c.elements.get('viewMode').hidden,false);
+  c.run('joined=false;updateTouchControls()');
+  assert.equal(arena.classList.contains('mobile-active'),false);
+  assert.equal(c.sandbox.document.body.classList.contains('mobile-playing'),false);
+  assert.equal(c.elements.get('viewMode').hidden,true);
+  c.run('joined=true');c.media.matches=false;c.media.change();
+  assert.equal(arena.classList.contains('mobile-active'),false);
+});
+
+test('mobile camera enlarges tanks, follows them, and keeps every corner visible',()=>{
+  const c=client();
+  for(const [width,height] of [[874,290],[390,620],[667,240],[320,430]]){
+    c.run(`cssW=${width};cssH=${height};tanks[0].x=800;tanks[0].y=520;updateCamera()`);
+    assert(c.run('48*boardScale*scale')>=33.59,'tank width stays readable in CSS pixels');
+    assert.equal(c.run('project(tanks[0].x,tanks[0].y).x*scale+offsetX'),width/2);
+    assert.equal(c.run('project(tanks[0].x,tanks[0].y).y*scale+offsetY'),height/2-40);
+    const before=c.run('offsetX');
+    c.run('tanks[0].x+=50;updateCamera()');assert(c.run('offsetX')<before);
+    for(const [x,y] of [[0,0],[1600,0],[0,1040],[1600,1040]]){
+      c.run(`tanks[0].x=${x};tanks[0].y=${y};updateCamera()`);
+      const screenX=c.run('project(tanks[0].x,tanks[0].y).x*scale+offsetX');
+      const screenY=c.run('project(tanks[0].x,tanks[0].y).y*scale+offsetY');
+      assert(screenX>=23.99&&screenX<=width-23.99);
+      assert(screenY>=23.99&&screenY<=height-23.99);
+      assert(screenY>=63.99&&screenY<=height-143.99,'tank stays clear of tools and thumb pads');
+    }
+  }
+});
+
+test('overview fits the whole board and toggles back without changing touch aim',()=>{
+  const c=client();c.run('cssW=874;cssH=290;touchAim={x:0,y:-1};updateCamera()');
+  const closeScale=c.run('scale');
+  c.elements.get('viewMode').events.click();
+  assert.equal(c.elements.get('viewMode').textContent,'CLOSE VIEW');
+  assert(c.run('scale')<closeScale);
+  assert(c.run('project(0,0).x*scale+offsetX')>=23.99);
+  assert(c.run('project(0,0).y*scale+offsetY')>=23.99);
+  assert(c.run('project(W,H).x*scale+offsetX')<=850.01);
+  assert(c.run('project(W,H).y*scale+offsetY')<=266.01);
+  c.run('sendInput()');assert.equal(c.sent.at(-1).aimY,-50);
+  c.elements.get('viewMode').events.click();assert.equal(c.run('scale'),closeScale);
+  assert.equal(c.elements.get('viewMode').textContent,'FULL MAP');
+});
+
+test('desktop camera and mouse unprojection remain unchanged',()=>{
+  const c=client(false);c.run('cssW=1120;cssH=610;updateCamera()');
+  assert.equal(c.run('scale'),1);assert.equal(c.run('offsetX'),0);assert.equal(c.run('offsetY'),0);
+  c.run('aimAt({pointerType:"mouse",clientX:560,clientY:319})');
+  assert.equal(c.run('pointer.x'),800);assert.equal(c.run('pointer.y'),527.7);
+});
+
 test('fullscreen enters/exits and unavailable or rejected requests use a reversible expanded view',async()=>{
   for(const mode of ['supported','unavailable','rejected']){
     const c=client(),doc=c.sandbox.document,arena=doc.getElementById('arena');

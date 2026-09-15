@@ -5,7 +5,7 @@ const fs=require('node:fs');
 test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
   const elements=new Map(),listeners={},audioEvents=[];
   const context=new Proxy({createLinearGradient:()=>({addColorStop(){}})},{get:(target,key)=>target[key]||(()=>{}),set:()=>true});
-  const element=()=>({style:{setProperty(){}},classList:{add(){},remove(){}},addEventListener(){},setAttribute(){},replaceChildren(){},append(){},focus(){},getBoundingClientRect:()=>({width:1120,height:610}),getContext:()=>context});
+  const element=()=>({style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},addEventListener(){},setAttribute(){},replaceChildren(){},append(){},focus(){},getBoundingClientRect:()=>({width:1120,height:610}),getContext:()=>context});
   const param=()=>({value:0,cancelScheduledValues(){},setValueAtTime(value){this.value=value;},setTargetAtTime(value){this.value=value;},exponentialRampToValueAtTime(value){this.value=value;}});
   const node=()=>({connect(){},disconnect(){},start(){audioEvents.push('start');},stop(){}});
   class AudioContext {
@@ -17,6 +17,7 @@ test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
     createBuffer(channels,length){return {getChannelData:()=>new Float32Array(length)};}
   }
   const sandbox={assert,audioEvents,FIELD:require('../shared.js'),URL,performance:{now:()=>100},location:{href:'http://localhost:8765',origin:'http://localhost:8765',hostname:'localhost'},document:{hidden:false,getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:element,addEventListener(){}},window:{AudioContext,addEventListener:(name,handler)=>{listeners[name]=handler;}},matchMedia:()=>({matches:true}),ResizeObserver:class{observe(){}},devicePixelRatio:1,setInterval(){},setTimeout(){},clearTimeout(){},requestAnimationFrame(){},fetch:()=>new Promise(()=>{}),WebSocket:{OPEN:1}};
+  sandbox.document.body=element();
   vm.createContext(sandbox);vm.runInContext(fs.readFileSync('client.js','utf8'),sandbox);
   vm.runInContext(`
     myId='me';joined=true;audioReady=true;lastSnapshot=100;
@@ -33,4 +34,3 @@ test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
     joined=false;updateMovementSound(170);assert.equal(engine.gain.gain.value,0,'disconnect stops engine');
   `,sandbox);
 });
-

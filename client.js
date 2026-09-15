@@ -7,7 +7,7 @@ const keys=new Set(),moveKeys=new Set(['KeyW','KeyA','KeyS','KeyD']);
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const touchMedia=matchMedia('(pointer: coarse) and (hover: none)');
 const sticks={move:{id:null,x:0,y:0},aim:{id:null,x:0,y:0}};
-let touchAim=null,expanded=false;
+let touchAim=null,expanded=false,mapOverview=false;
 let cssW=1120,cssH=610,scale=1,offsetX=0,offsetY=0;
 let tanks=[],shells=[],particles=[],tracks=[],shake=0,last=0,sound=true,audioReady=false,audioContext;
 let socket=null,myId=null,token=null,joined=false,connecting=false,intentional=false,retry=0,retryTimer;
@@ -165,6 +165,9 @@ for(const name of ['move','aim']){
 }
 function updateTouchControls(){
   const mobile=touchMedia.matches;
+  $('arena').classList.toggle('mobile-active',mobile&&joined);
+  document.body.classList.toggle('mobile-playing',mobile&&joined);
+  $('viewMode').hidden=!mobile||!joined;
   $('thumbControls').hidden=!mobile||!joined;
   $('mobileHelp').hidden=!mobile;
   $('desktopHelp').hidden=mobile;
@@ -174,6 +177,12 @@ function updateTouchControls(){
 }
 touchMedia.addEventListener?.('change',()=>{release();updateTouchControls();});
 updateTouchControls();
+$('viewMode').addEventListener('click',()=>{
+  release();mapOverview=!mapOverview;
+  $('viewMode').textContent=mapOverview?'CLOSE VIEW':'FULL MAP';
+  $('viewMode').setAttribute('aria-pressed',String(mapOverview));
+  updateCamera();
+});
 
 function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement;}
 function updateFullscreen(){
@@ -237,7 +246,27 @@ function audioUnavailable(){sound=false;$('sound').textContent='SOUND OFF';$('so
 function getAudio(){if(!audioReady||!sound)return null;try{audioContext??=new (window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume().catch(audioUnavailable);return audioContext;}catch{audioUnavailable();return null;}}
 function beep(freq,duration,type='sine',volume=.035){const ac=getAudio();if(!ac)return;const osc=ac.createOscillator(),gain=ac.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,ac.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(30,freq*.3),ac.currentTime+duration);gain.gain.setValueAtTime(volume,ac.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);osc.connect(gain);gain.connect(ac.destination);osc.onended=()=>{osc.disconnect();gain.disconnect();};osc.start();osc.stop(ac.currentTime+duration);}
 function rumble(duration,volume,frequency){const ac=getAudio();if(!ac)return;const buffer=ac.createBuffer(1,Math.ceil(ac.sampleRate*duration),ac.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;const source=ac.createBufferSource(),filter=ac.createBiquadFilter(),gain=ac.createGain();source.buffer=buffer;filter.type='lowpass';filter.frequency.value=frequency;gain.gain.setValueAtTime(volume,ac.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);source.connect(filter);filter.connect(gain);gain.connect(ac.destination);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};source.start();source.stop(ac.currentTime+duration);}
-function resize(){const rect=canvas.getBoundingClientRect();cssW=rect.width;cssH=rect.height;const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(cssW*dpr);canvas.height=Math.round(cssH*dpr);scale=Math.min(cssW/1120,cssH/610);offsetX=(cssW-1120*scale)/2;offsetY=(cssH-610*scale)/2;}
+function resize(){const rect=canvas.getBoundingClientRect();cssW=rect.width;cssH=rect.height;const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(cssW*dpr);canvas.height=Math.round(cssH*dpr);updateCamera();}
+function updateCamera(){
+  const me=joined&&touchMedia.matches&&tanks.find(t=>t.id===myId);
+  if(!me){
+    scale=Math.min(cssW/1120,cssH/610);offsetX=(cssW-1120*scale)/2;offsetY=(cssH-610*scale)/2;
+    return;
+  }
+  // Fit the board itself for overview, not the old presentation frame's empty margins.
+  const margin=24,topLeft=project(0,0),bottomRight=project(W,H);
+  const fit=Math.max(.01,Math.min((cssW-margin*2)/(W*boardScale),(cssH-margin*2)/(H*boardScale)));
+  // At least 0.7 CSS pixels per world unit: a 48-unit tank is 34px wide.
+  scale=mapOverview?fit:Math.max(fit,1.4,Math.min(cssW,cssH)/280);
+  const focus=project(me.x,me.y);
+  function axis(size,start,end,target,before=margin,after=margin){
+    if((end-start)*scale<=size-before-after)return (size-(start+end)*scale)/2;
+    return Math.max(size-after-end*scale,Math.min(before-start*scale,(size+before-after)/2-target*scale));
+  }
+  offsetX=axis(cssW,topLeft.x,bottomRight.x,focus.x);
+  // Leave room for the top tools and bottom thumb pads near map boundaries.
+  offsetY=axis(cssH,topLeft.y,bottomRight.y,focus.y,mapOverview?margin:64,mapOverview?margin:144);
+}
 function project(x,y,z=0){return FIELD.project(x,y,z);}
 function poly(points,fill,stroke){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.8;ctx.stroke();}}
 function line3(points,color,width=1){ctx.beginPath();points.forEach((p,i)=>{const s=project(...p);i?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y)});ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
@@ -291,8 +320,7 @@ function frame(time){
   }
   updateMovementSound(ownSpeed);
   for(const s of shells){s.trail.push({x:s.x,y:s.y});if(s.trail.length>7)s.trail.shift();}
-  tracks=tracks.filter(t=>(t.life-=dt)>0).slice(-500);updateEffects(dt);draw();requestAnimationFrame(frame);
+  tracks=tracks.filter(t=>(t.life-=dt)>0).slice(-500);updateEffects(dt);updateCamera();draw();requestAnimationFrame(frame);
 }
 new ResizeObserver(resize).observe(canvas);
 resize();requestAnimationFrame(frame);
-

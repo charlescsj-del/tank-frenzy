@@ -68,6 +68,35 @@
   .game:is(:fullscreen,:-webkit-full-screen,.expanded) .join-fields{margin:7px 0}
   .game:is(:fullscreen,:-webkit-full-screen,.expanded) .hint{margin-top:5px}
 }
+/* Keep the battlefield, rather than page chrome, dominant during touch play. */
+@media(pointer:coarse) and (hover:none){
+  .mobile-playing .page{padding:0;max-width:none;animation:none}
+  .mobile-playing .masthead,.mobile-playing .intro,.mobile-playing .bottom,.mobile-playing footer{display:none}
+  .game.mobile-active{display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;border:0;border-radius:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .game.mobile-active .stage{flex:1;min-height:0}
+  .game.mobile-active canvas{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
+  .game.mobile-active .room-strip{flex-shrink:0;flex-wrap:nowrap;padding:2px 8px;gap:6px}
+  .game.mobile-active .room-title{font-size:9px;letter-spacing:0}
+  .game.mobile-active .room-actions{flex-wrap:nowrap;gap:4px}
+  .game.mobile-active .room-actions .tool{font-size:9px;letter-spacing:0;padding:4px 8px}
+  .game.mobile-active #viewNote{display:none}
+  .game.mobile-active .scoreboard{min-height:0;flex-shrink:0;padding:2px 8px;gap:4px;flex-wrap:nowrap;overflow-x:auto}
+  .game.mobile-active .roster-card{min-width:80px;padding:3px 6px}
+  .game.mobile-active .roster-name{font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block}
+  .game.mobile-active .roster-stats{display:none}
+  .game.mobile-active .health{margin-top:3px;gap:3px}
+  .game.mobile-active .pip{width:12px;height:4px}
+  .game.mobile-active .battlebar{padding:4px 8px;flex-shrink:0;font-size:8px;letter-spacing:0}
+  .game.mobile-active .stage-label{display:none}
+  .game.mobile-active .arena-tools{top:4px;right:8px;gap:4px}
+  .game.mobile-active .arena-tools .tool{font-size:9px;padding:6px 8px}
+  .game.mobile-active #latency{min-height:0;align-self:center;padding:4px;pointer-events:none}
+  .game.mobile-active .thumb-pad{background:#eef0e342;box-shadow:none}
+}
+@media(pointer:coarse) and (hover:none) and (max-width:420px){
+  .game.mobile-active .room-title{max-width:85px;overflow-wrap:anywhere}
+  .game.mobile-active .room-actions .tool{font-size:8px;padding:4px 6px}
+}
 </style>
 </head>
 <body>
@@ -81,7 +110,7 @@
 <div class="stage">
 <canvas id="game" width="1120" height="610" tabindex="0" aria-label="Tank arena. Use W A S D to move, point the mouse to aim, and hold left click to fire."></canvas>
 <div class="stage-label"><b id="mapLabel">RANDOM MAP / NEW EACH MATCH</b><span>1600 x 1040 / 0.42 SECOND RELOAD</span></div>
-<div class="arena-tools"><button id="sound" class="tool" aria-pressed="true">SOUND ON</button><span class="tool" id="latency">OFFLINE</span></div>
+<div class="arena-tools"><button id="viewMode" class="tool" aria-pressed="false" hidden>FULL MAP</button><button id="sound" class="tool" aria-pressed="true">SOUND ON</button><span class="tool" id="latency">OFFLINE</span></div>
 <div id="respawn" role="status" aria-live="polite"></div>
 <div id="thumbControls" class="thumb-controls" hidden>
 <div class="thumb-control"><div id="moveStick" class="thumb-pad" role="group" aria-label="Move: drag with your left thumb"><span></span></div>MOVE</div>
@@ -96,7 +125,7 @@
 <div class="battlebar"><span><i class="live-dot"></i><b id="status">READY TO CONNECT</b></span><span>YOUR COLOR = YOUR SHELLS &nbsp; / &nbsp; FIVE-HIT HULLS</span></div>
 </section>
 <section class="bottom">
-<div id="mobileHelp" class="mobile-help" hidden><strong>Two thumbs. Full control.</strong><p>Left thumb to move. Right thumb to aim and fire. Release either control to stop.</p><p>Tap Full Screen and turn your phone sideways for a wider battlefield.</p></div>
+<div id="mobileHelp" class="mobile-help" hidden><strong>Two thumbs. Full control.</strong><p>Left thumb to move. Right thumb to aim and fire. Release either control to stop.</p><p>The close view follows your tank. Tap Full Map for an overview, or Close View to return. Turn your phone sideways for a wider battlefield.</p></div>
 <div id="desktopHelp">
 <div class="control-card"><div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd class="fire">MOVE / STRAFE</kbd></div><div><div class="key-label">EVERY PLAYER</div><h3>Drive your own way.</h3><p>WASD moves in screen directions.<br>Combine keys to move diagonally.</p></div></div>
 <div class="control-card"><div><div class="key-label">INDEPENDENT TURRET</div><h3>Point. Click. Boom.</h3><p>The barrel follows your mouse. Hold left click to fire every 0.42 seconds. Straight map axes match WASD movement. Hear your engine and opponents' shots.</p></div></div>
@@ -109,4 +138,3 @@
 <script src="/client.js"></script>
 </body>
 </html>
-
