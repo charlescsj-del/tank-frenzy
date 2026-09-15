@@ -78,6 +78,7 @@ function applySnapshot(data){
   for(const e of data.events){if(e.id<=lastEvent)continue;lastEvent=e.id;
     if(e.type==='shot'){const t=tanks.find(t=>t.id===e.player);if(t)t.recoil=5;burst(e.x,e.y,22,shellColors[e.slot].glow,5);playShotSound(e);}
     if(e.type==='bounce'){burst(e.x,e.y,22,shellColors[e.slot].glow,4);beep(850,.09,'sine',.025);}
+    if(e.type==='shell-clash'){burst(e.x,e.y,22,shellColors[e.slot].glow,8);burst(e.x,e.y,22,shellColors[e.otherSlot].glow,8);beep(1050,.08,'triangle',.03);}
     if(e.type==='hit'||e.type==='destroyed'){const dead=e.type==='destroyed',t=tanks.find(t=>t.id===e.player);if(t)t.flash=.16;burst(e.x,e.y,22,dead?'#ffbc6c':colors[e.slot],dead?40:14);beep(dead?75:100,.22,'sawtooth',.045);rumble(dead?.65:.18,dead?.14:.07,dead?650:1800);if(e.player===myId)shake=reducedMotion?0:4;}
     if(e.type==='restart'){tracks=[];particles=[];}
   }

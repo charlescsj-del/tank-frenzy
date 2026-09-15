@@ -26,6 +26,7 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 - W/A/S/D: move up/left/down/right along the unrotated map axes, including diagonal movement.
 - Audio: your own moving tank's engine and track sound, plus opponents' firing sounds. Your own firing sound is muted; impacts and ricochets remain audible.
 - Shell range covers the full map diagonal, and shots into nearby cover ricochet from the barrel's last clear point.
+- Opposing shells destroy each other on contact with a spark and impact sound. You can shoot down incoming fire; your own shells pass through one another. Shell interceptions do not award kills or damage nearby tanks.
 - Mouse pointer: aim the turret independently of movement.
 - Left click: fire. Hold to keep firing, with a 0.42-second cooldown between shots.
 - Five hits destroy a tank; respawn takes three seconds.
