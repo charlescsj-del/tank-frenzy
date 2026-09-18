@@ -3,19 +3,19 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 
-function client(mobile=true){
+function client(mobile=true,url='http://localhost:8765'){
   const elements=new Map(),windowEvents={},documentEvents={},sent=[];
   function element(){
     const events={},classes=new Set(),captures=new Set();
-    return {events,hidden:false,textContent:'',style:{setProperty(){}},
+    return {events,children:[],hidden:false,textContent:'',style:{setProperty(){}},replaceChildren(...items){this.children=items;},append(...items){this.children.push(...items);},
       classList:{add:n=>classes.add(n),remove:n=>classes.delete(n),toggle(n,on){on?classes.add(n):classes.delete(n);},contains:n=>classes.has(n)},
       addEventListener(n,f){events[n]=f;},setAttribute(){},focus(){},
       getContext:()=>({}),getBoundingClientRect:()=>({left:0,top:0,width:100,height:100}),
       setPointerCapture:id=>captures.add(id),hasPointerCapture:id=>captures.has(id),releasePointerCapture:id=>captures.delete(id)};
   }
   const media={matches:mobile,addEventListener(n,f){this.change=f;}};
-  const sandbox={URL,FIELD:require('../shared.js'),performance:{now:()=>100},location:{href:'http://localhost:8765',origin:'http://localhost:8765'},
-    document:{body:element(),getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},addEventListener(n,f){documentEvents[n]=f;}},
+  const sandbox={URL,FIELD:require('../shared.js'),performance:{now:()=>100},location:{href:url,origin:'http://localhost:8765'},
+    document:{body:element(),createElement:element,getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},addEventListener(n,f){documentEvents[n]=f;}},
     window:{addEventListener(n,f){windowEvents[n]=f;}},matchMedia:q=>q.includes('pointer')?media:{matches:false},
     ResizeObserver:class{observe(){}},devicePixelRatio:1,setInterval(){},requestAnimationFrame(){},fetch:()=>new Promise(()=>{}),WebSocket:{OPEN:1},sent};
   vm.createContext(sandbox);vm.runInContext(fs.readFileSync('client.js','utf8'),sandbox);
@@ -64,6 +64,35 @@ test('desktop hides thumb controls; touch controls wait for joining',()=>{
   mobile.run('joined=false;updateTouchControls()');assert.equal(mobile.elements.get('thumbControls').hidden,true);
 });
 
+test('plain URLs open the room browser while room links keep the prefilled join form',()=>{
+  const plain=client();assert.equal(plain.elements.get('roomBrowser').hidden,false);assert.equal(plain.elements.get('joinFields').hidden,true);
+  const linked=client(false,'http://localhost:8765/?room=quarry');
+  assert.equal(linked.elements.get('roomBrowser').hidden,true);assert.equal(linked.elements.get('roomInput').value,'QUARRY');
+  assert.equal(linked.elements.get('joinFields').hidden,false);
+});
+
+test('room selection previews names before joining and create opens a separate editable form',async()=>{
+  const c=client();c.run('joined=false');
+  c.sandbox.fetch=async()=>({ok:true,json:async()=>({rooms:[{code:'ALPHA',capacity:4,available:2,players:[{name:'Alice',connected:true},{name:'Bob',connected:false}]}]})});
+  await c.run('refreshRooms()');c.elements.get('roomList').children[0].events.click();
+  assert.equal(c.elements.get('roomDetails').hidden,false);
+  assert.deepEqual(c.elements.get('roomPlayers').children.map(p=>p.textContent),['Alice','Bob (reconnecting)']);
+  c.elements.get('joinSelected').events.click();
+  assert.equal(c.run('joinMode'),'join');assert.equal(c.elements.get('roomInput').value,'ALPHA');assert.equal(c.elements.get('roomInput').readOnly,true);
+  c.elements.get('createRoom').events.click();
+  assert.equal(c.run('joinMode'),'create');assert.equal(c.elements.get('roomInput').readOnly,false);assert.match(c.elements.get('roomInput').value,/^ROOM-/);
+});
+
+test('full and vanished rooms cannot be joined; request failures provide a retry message',async()=>{
+  const c=client();c.run('joined=false;selectedRoom="FULL"');
+  c.sandbox.fetch=async()=>({ok:true,json:async()=>({rooms:[{code:'FULL',capacity:4,available:0,players:[]}]})});
+  await c.run('refreshRooms()');assert.equal(c.elements.get('joinSelected').disabled,true);
+  c.sandbox.fetch=async()=>({ok:true,json:async()=>({rooms:[]})});
+  await c.run('refreshRooms()');assert.equal(c.elements.get('roomDetails').hidden,true);assert.equal(c.elements.get('joinSelected').disabled,true);
+  c.sandbox.fetch=async()=>{throw Error('offline');};await c.run('refreshRooms()');
+  assert.match(c.elements.get('roomListStatus').textContent,/Tap Refresh/);
+});
+
 test('mobile play uses a compact viewport and restores the page on leaving or switching input',()=>{
   const c=client(),arena=c.elements.get('arena');
   assert.equal(arena.classList.contains('mobile-active'),true);
@@ -75,6 +104,23 @@ test('mobile play uses a compact viewport and restores the page on leaving or sw
   assert.equal(c.elements.get('viewMode').hidden,true);
   c.run('joined=true');c.media.matches=false;c.media.change();
   assert.equal(arena.classList.contains('mobile-active'),false);
+});
+
+test('mobile menu releases controls and closes on action, outside tap, Escape and leaving',()=>{
+  const c=client(),arena=c.elements.get('arena'),menu=c.elements.get('arenaMenu');
+  c.elements.get('moveStick').events.pointerdown(c.event(1,82,50));
+  menu.events.click();
+  assert.equal(arena.classList.contains('menu-open'),true);
+  assert.equal(c.sent.at(-1).x,0);
+  c.elements.get('arenaActions').events.click({target:{closest:()=>({})}});
+  assert.equal(arena.classList.contains('menu-open'),false);
+  menu.events.click();c.sandbox.document.getElementById('arenaHeader').contains=()=>false;
+  c.documentEvents.pointerdown({target:{}});
+  assert.equal(arena.classList.contains('menu-open'),false);
+  menu.events.click();c.documentEvents.keydown({code:'Escape'});
+  assert.equal(arena.classList.contains('menu-open'),false);
+  menu.events.click();c.run('joined=false;updateTouchControls()');
+  assert.equal(arena.classList.contains('menu-open'),false);
 });
 
 test('mobile camera enlarges tanks, follows them, and keeps every corner visible',()=>{

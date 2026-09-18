@@ -27,6 +27,19 @@
 #respawn:empty{display:none}.stage canvas{cursor:crosshair}.overlay.hidden{display:none}.bottom{grid-template-columns:1fr 1fr 1.2fr}.network-detail{font-size:11px!important;line-height:1.7;overflow-wrap:anywhere}.network-detail a{color:#486941}.room-empty{font:11px Consolas,monospace;color:#7c856f}.touch{display:none!important}
 @media(max-width:570px){.dialog{padding:15px 20px}.dialog h2{font-size:24px}.dialog p{margin:7px 0;font-size:10px}.join-fields{margin:10px 0}.join-fields input{padding:7px}.room-strip{padding:10px;align-items:flex-start}.room-title{font-size:9px;line-height:1.5}.room-strip .tool{font-size:8px}.scoreboard{padding:9px;gap:6px}.roster-card{min-width:100px;padding:7px}.roster-name{font-size:9px}.roster-stats{font-size:8px}.roster-card .pip{width:12px}.bottom{grid-template-columns:1fr 1fr}.stage canvas{aspect-ratio:1.1}#respawn{bottom:12px;font-size:10px;padding:8px;width:80%}}
 .room-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.arena-header{position:relative;flex-shrink:0}
+.arena-menu-button{display:none}
+.dialog{max-height:100%;overflow-y:auto}
+.room-browser{text-align:left;margin:12px 0}
+.lobby-actions{display:flex;gap:8px;justify-content:space-between;margin-bottom:10px}
+.room-list{display:grid;gap:6px;max-height:150px;overflow-y:auto}
+.room-choice{width:100%;min-height:44px;padding:10px;text-align:left;border:1px solid #bdc9b0;border-radius:5px;background:#eef0e3;color:#344632;font:12px Consolas,monospace;overflow-wrap:anywhere}
+.room-choice[aria-pressed=true]{border-color:#b95b31;background:#f7e1d1}
+#roomListStatus,#roomCapacity{font-size:12px;color:#4f5c47;margin:8px 0}
+.room-details{border-top:1px solid #bdc9b0;margin-top:12px;padding-top:10px}
+#roomPlayers{max-height:90px;overflow-y:auto;padding-left:20px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+#joinSelected{width:100%}.primary:disabled{cursor:default}
+#browseRooms{margin-top:12px}
 #viewNote{margin:0;padding:8px 12px;background:#f6f6ef;font-size:11px;color:#4f5c47}
 #viewNote:empty{display:none}
 .thumb-controls{display:none;position:absolute;inset:0;pointer-events:none;z-index:2}
@@ -75,27 +88,27 @@
   .game.mobile-active{display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;border:0;border-radius:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
   .game.mobile-active .stage{flex:1;min-height:0}
   .game.mobile-active canvas{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
-  .game.mobile-active .room-strip{flex-shrink:0;flex-wrap:nowrap;padding:2px 8px;gap:6px}
-  .game.mobile-active .room-title{font-size:9px;letter-spacing:0}
-  .game.mobile-active .room-actions{flex-wrap:nowrap;gap:4px}
-  .game.mobile-active .room-actions .tool{font-size:9px;letter-spacing:0;padding:4px 8px}
+  .game.mobile-active .arena-header{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;align-items:center;gap:8px;height:44px;padding:0 8px;background:#f6f6ef;border-bottom:1px solid #d4dacb;z-index:4}
+  .game.mobile-active .room-strip{display:contents}
+  .game.mobile-active .room-title{grid-column:1;grid-row:1;font-size:9px;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .game.mobile-active .arena-menu-button{display:block;grid-column:3;grid-row:1;width:44px;height:44px;padding:0;font-size:9px;letter-spacing:0}
+  .game.mobile-active .room-actions{display:none;position:absolute;top:100%;right:8px;max-width:calc(100vw - 16px);padding:8px;gap:6px;background:#f6f6ef;border:1px solid #bfc6b5;border-radius:0 0 6px 6px;box-shadow:0 6px 18px #20362230}
+  .game.mobile-active.menu-open .room-actions{display:flex;flex-wrap:wrap}
+  .game.mobile-active .room-actions .tool{font-size:10px;letter-spacing:0;padding:6px 10px}
   .game.mobile-active #viewNote{display:none}
-  .game.mobile-active .scoreboard{min-height:0;flex-shrink:0;padding:2px 8px;gap:4px;flex-wrap:nowrap;overflow-x:auto}
-  .game.mobile-active .roster-card{min-width:80px;padding:3px 6px}
-  .game.mobile-active .roster-name{font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block}
+  .game.mobile-active .scoreboard{grid-column:2;grid-row:1;min-width:0;min-height:0;padding:0;gap:0;background:none;border:0;overflow:hidden}
+  .game.mobile-active .roster-card{display:none}
+  .game.mobile-active .roster-card.me{display:flex;align-items:center;gap:6px;min-width:0;padding:0;border:0;box-shadow:none;background:none}
+  .game.mobile-active .roster-name{font-size:10px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block}
   .game.mobile-active .roster-stats{display:none}
-  .game.mobile-active .health{margin-top:3px;gap:3px}
-  .game.mobile-active .pip{width:12px;height:4px}
+  .game.mobile-active .health{margin:0;gap:3px;flex-shrink:0}
+  .game.mobile-active .pip{width:8px;height:5px}
   .game.mobile-active .battlebar{padding:4px 8px;flex-shrink:0;font-size:8px;letter-spacing:0}
   .game.mobile-active .stage-label{display:none}
   .game.mobile-active .arena-tools{top:4px;right:8px;gap:4px}
   .game.mobile-active .arena-tools .tool{font-size:9px;padding:6px 8px}
   .game.mobile-active #latency{min-height:0;align-self:center;padding:4px;pointer-events:none}
   .game.mobile-active .thumb-pad{background:#eef0e342;box-shadow:none}
-}
-@media(pointer:coarse) and (hover:none) and (max-width:420px){
-  .game.mobile-active .room-title{max-width:85px;overflow-wrap:anywhere}
-  .game.mobile-active .room-actions .tool{font-size:8px;padding:4px 6px}
 }
 </style>
 </head>
@@ -104,13 +117,14 @@
 <header class="masthead"><div class="brand">IRON<span>/</span>FIELD</div><div class="edition"><span><i class="live-dot"></i>NETWORK MULTIPLAYER</span><span>ONE ROOM / 2 - 4 PLAYERS</span></div></header>
 <section class="intro"><div><p class="eyebrow">YOUR TANK. YOUR BROWSER. ONE BATTLEFIELD.</p><h1>Small tanks.<br><span>Big rivalries.</span></h1></div><p>Bring your friends into the field.<br><span id="introControls">Move with WASD. Aim with your mouse. Click to fire.</span></p></section>
 <section id="arena" class="game" aria-label="Network tank arena">
-<div class="room-strip"><span class="room-title">ROOM <b id="roomCode">QUARRY</b> &nbsp; / &nbsp; <span id="roomCount">0 / 4 PLAYERS</span></span><span class="room-actions"><button id="fullscreen" class="tool" aria-pressed="false">FULL SCREEN</button><button id="copy" class="tool">COPY INVITE</button><button id="leave" class="tool" hidden>LEAVE ROOM</button></span></div>
+<div id="arenaHeader" class="arena-header">
+<div class="room-strip"><span class="room-title">ROOM <b id="roomCode">QUARRY</b> &nbsp; / &nbsp; <span id="roomCount">0 / 4 PLAYERS</span></span><button id="arenaMenu" class="tool arena-menu-button" aria-expanded="false" aria-controls="arenaActions" aria-label="Arena menu">MENU</button><div id="arenaActions" class="room-actions"><button id="fullscreen" class="tool" aria-pressed="false">FULL SCREEN</button><button id="copy" class="tool">COPY INVITE</button><button id="leave" class="tool" hidden>LEAVE ROOM</button><button id="viewMode" class="tool" aria-pressed="false" hidden>FULL MAP</button><button id="sound" class="tool" aria-pressed="true">SOUND ON</button><span class="tool" id="latency">OFFLINE</span></div></div>
 <p id="viewNote" role="status"></p>
 <div id="roster" class="scoreboard"><span class="room-empty">Join the room to claim your tank.</span></div>
+</div>
 <div class="stage">
 <canvas id="game" width="1120" height="610" tabindex="0" aria-label="Tank arena. Use W A S D to move, point the mouse to aim, and hold left click to fire."></canvas>
 <div class="stage-label"><b id="mapLabel">RANDOM MAP / NEW EACH MATCH</b><span>1600 x 1040 / 0.42 SECOND RELOAD</span></div>
-<div class="arena-tools"><button id="viewMode" class="tool" aria-pressed="false" hidden>FULL MAP</button><button id="sound" class="tool" aria-pressed="true">SOUND ON</button><span class="tool" id="latency">OFFLINE</span></div>
 <div id="respawn" role="status" aria-live="polite"></div>
 <div id="thumbControls" class="thumb-controls" hidden>
 <div class="thumb-control"><div id="moveStick" class="thumb-pad" role="group" aria-label="Move: drag with your left thumb"><span></span></div>MOVE</div>
@@ -118,14 +132,20 @@
 </div>
 <div id="overlay" class="overlay"><div class="dialog">
 <div id="dialogTag" class="eyebrow">ASSEMBLE YOUR RIVALS</div><h2 id="dialogTitle">Join the field.</h2><p id="dialogText">For 2-4 players, each in their own browser. Share a room code and explore a new random battlefield each match.</p>
-<form id="joinForm"><div id="joinFields" class="join-fields"><label>CALLSIGN<input id="callsign" placeholder="Your name" maxlength="16" autocomplete="off"></label><label>ROOM CODE<input id="roomInput" value="QUARRY" maxlength="16" pattern="[A-Za-z0-9-]+" required autocomplete="off"></label></div><button id="action" class="primary" type="submit">Join arena &gt;</button></form>
+<section id="roomBrowser" class="room-browser" hidden aria-label="Available rooms">
+<div class="lobby-actions"><button id="refreshRooms" class="tool" type="button">REFRESH</button><button id="createRoom" class="tool" type="button">CREATE ROOM</button></div>
+<div id="roomListStatus" role="status"></div><div id="roomList" class="room-list"></div>
+<div id="roomDetails" class="room-details" hidden><strong id="selectedRoomName"></strong><ul id="roomPlayers" aria-label="Players in selected room"></ul><div id="roomCapacity"></div><button id="joinSelected" class="primary" type="button" disabled>JOIN THIS ROOM</button></div>
+</section>
+<form id="joinForm"><div id="joinFields" class="join-fields"><label>CALLSIGN<input id="callsign" placeholder="Your name" maxlength="16" autocomplete="off"></label><label>ROOM CODE<input id="roomInput" maxlength="16" pattern="[A-Za-z0-9-]+" required autocomplete="off"></label></div><button id="action" class="primary" type="submit">Join arena &gt;</button></form>
+<button id="browseRooms" class="tool" type="button">BROWSE ROOMS</button>
 <span id="networkNote" class="hint">WASD / MOVE &nbsp; MOUSE / AIM &nbsp; LEFT CLICK / FIRE</span>
 </div></div>
 </div>
 <div class="battlebar"><span><i class="live-dot"></i><b id="status">READY TO CONNECT</b></span><span>YOUR COLOR = YOUR SHELLS &nbsp; / &nbsp; FIVE-HIT HULLS</span></div>
 </section>
 <section class="bottom">
-<div id="mobileHelp" class="mobile-help" hidden><strong>Two thumbs. Full control.</strong><p>Left thumb to move. Right thumb to aim and fire. Release either control to stop.</p><p>The close view follows your tank. Tap Full Map for an overview, or Close View to return. Turn your phone sideways for a wider battlefield.</p></div>
+<div id="mobileHelp" class="mobile-help" hidden><strong>Two thumbs. Full control.</strong><p>Left thumb to move. Right thumb to aim and fire. Release either control to stop.</p><p>The close view follows your tank. Open Menu for Full Map, sound, fullscreen, invite and leave controls. Turn your phone sideways for a wider battlefield.</p></div>
 <div id="desktopHelp">
 <div class="control-card"><div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd class="fire">MOVE / STRAFE</kbd></div><div><div class="key-label">EVERY PLAYER</div><h3>Drive your own way.</h3><p>WASD moves in screen directions.<br>Combine keys to move diagonally.</p></div></div>
 <div class="control-card"><div><div class="key-label">INDEPENDENT TURRET</div><h3>Point. Click. Boom.</h3><p>The barrel follows your mouse. Hold left click to fire every 0.42 seconds. Straight map axes match WASD movement. Hear your engine and opponents' shots.</p></div></div>

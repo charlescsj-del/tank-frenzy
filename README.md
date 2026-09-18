@@ -2,7 +2,9 @@
 
 ## Public Game
 
-Play online at https://tank-frenzy.onrender.com/?room=QUARRY. This link opens the game with the `QUARRY` room code prefilled.
+Play online at https://tank-frenzy.onrender.com/ to browse active rooms or create a new room. Select a room to preview player names and available spots before joining. The list refreshes every five seconds; reconnecting players keep their reserved spots briefly, and full rooms remain visible but cannot be joined.
+
+Room links such as https://tank-frenzy.onrender.com/?room=QUARRY still open the join form with that code prefilled. Creating a room checks that its code is unused; rooms exist while players are present and disappear after everyone leaves (or their reconnection reservations expire).
 
 ## Host
 
@@ -21,7 +23,7 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 ## Controls and Rules
 
 - Phones and tablets with a primary touch input show two thumb controls after joining: drag the left stick to move and the right stick to aim and fire. Release to stop. Mouse/keyboard browsers keep the desktop controls, even in a narrow window.
-- During touch play, the arena fills the available browser height with a compact HUD. A close camera follows your tank so tanks and nearby cover stay large. Tap **Full Map** for an overview and **Close View** to return; this changes only your view, not movement, aiming, or the shared map. Landscape gives you a wider view. Leaving the room restores the page.
+- During touch play, the arena fills the available browser height. A single 44px top row shows the room, your name and health, and **Menu**. Open Menu for fullscreen, invite, leave, sound and view controls. A close camera follows your tank so tanks and nearby cover stay large. Choose **Full Map** for an overview and **Close View** to return; this changes only your view, not movement, aiming, or the shared map. Landscape gives you a wider view. Leaving the room restores the page.
 - Full Screen expands the arena on desktop and mobile. Where browser fullscreen is unavailable or rejected, it falls back to an expanded view inside the browser; browser bars may remain visible. Use Exit Full Screen to return. Landscape is recommended on phones.
 - W/A/S/D: move up/left/down/right along the unrotated map axes, including diagonal movement.
 - Audio: your own moving tank's engine and track sound, plus opponents' firing sounds. Your own firing sound is muted; impacts and ricochets remain audible.
