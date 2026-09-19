@@ -18,8 +18,8 @@ test('friendly shells pass teammates and team kills produce a shared victory',()
   const r=arena({mode:'teams'}),a=r.add('A'),enemy=r.add('B'),friend=r.add('C');
   a.x=100;a.y=300;friend.x=200;friend.y=300;enemy.x=900;enemy.y=300;friend.shieldUntil=enemy.shieldUntil=0;
   r.shells=[{id:1,x:180,y:300,vx:410,vy:0,owner:a.id,team:0,slot:0,life:3,bounces:0}];
-  r.step(.05);assert.equal(friend.hp,5);assert.equal(r.shells.length,1);
-  r.teamScores[0]=9;r.damage(enemy,friend.id,5);
+  r.step(.05);assert.equal(friend.hp,10);assert.equal(r.shells.length,1);
+  r.teamScores[0]=9;r.damage(enemy,friend.id,10);
   assert.equal(r.teamScores[0],10);assert.equal(r.winner.name,'Orange team');
   r.step(11);assert.deepEqual(r.teamScores,[0,0]);assert.equal(r.winner,null);assert.equal(friend.power,null);
 });
@@ -47,7 +47,7 @@ test('pickup grants one timed power; replacement, expiry and death clear it corr
     assert.equal(p.power,type);assert.equal(r.pickups.length,0);assert.equal(r.snapshot().players[0].powerRemaining,10);
   }
   r.step(10.01);assert.equal(p.power,null);
-  power(r,p,'double');r.damage(p,'enemy',5);assert.equal(p.power,null);assert.equal(p.powerUntil,0);
+  power(r,p,'double');r.damage(p,'enemy',10);assert.equal(p.power,null);assert.equal(p.powerUntil,0);
 });
 
 test('speed moves 60 percent faster only while active',()=>{
@@ -70,8 +70,84 @@ test('double gun emits two shells; machine gun shoots faster within hard limits'
 test('laser damages enemies once, stops at cover, and ignores teammates',()=>{
   const r=arena({mode:'teams'}),a=r.add('A'),b=r.add('B'),c=r.add('C');
   a.x=100;a.y=300;a.aim=0;b.x=500;b.y=300;c.x=250;c.y=300;b.shieldUntil=c.shieldUntil=0;
-  power(r,a,'laser');r.fire(a);assert.equal(b.hp,3);assert.equal(c.hp,5);assert.equal(r.shells.length,0);
+  power(r,a,'laser');r.fire(a);assert.equal(b.hp,5);assert.equal(c.hp,10);assert.equal(r.shells.length,0);
   assert(r.events.some(e=>e.type==='laser'&&e.endX<500));
-  r.map.walls=[{x:350,y:200,w:30,h:200}];a.cool=0;r.fire(a);assert.equal(b.hp,3);assert.equal(r.events.at(-1).endX,350);
-  r.map.walls=[];b.shieldUntil=10;a.cool=0;r.fire(a);assert.equal(b.hp,3);
+  r.map.walls=[{x:350,y:200,w:30,h:200}];a.cool=0;r.fire(a);assert.equal(b.hp,5);assert.equal(r.events.at(-1).endX,350);
+  r.map.walls=[];b.shieldUntil=10;a.cool=0;r.fire(a);assert.equal(b.hp,5);
+});
+
+test('Immortal absorbs shells and blocks laser damage for ten seconds, even while firing',()=>{
+  const r=arena(),attacker=r.add('Attack'),p=r.add('Immortal'),behind=r.add('Behind');r.nextPickup=Infinity;
+  attacker.x=100;attacker.y=300;attacker.aim=0;p.x=500;p.y=300;behind.x=700;behind.y=300;
+  attacker.shieldUntil=p.shieldUntil=behind.shieldUntil=0;
+  r.pickups=[{id:1,type:'immortal',x:p.x,y:p.y,expiresAt:20}];r.step(1/120);
+  assert.equal(p.power,'immortal');assert.equal(r.snapshot().players.find(t=>t.id===p.id).powerRemaining,10);
+  p.cool=0;r.fire(p);assert.equal(p.shieldUntil,0);assert.equal(r.invulnerable(p),true,'firing does not cancel Immortal');
+  r.shells=[{id:99,x:p.x-24,y:p.y,vx:410,vy:0,owner:attacker.id,slot:0,life:2,bounces:0}];r.step(1/120);
+  assert.equal(p.hp,10);assert.equal(r.shells.length,0,'incoming shell is absorbed');
+  attacker.aim=0;power(r,attacker,'laser');r.fire(attacker);
+  assert.equal(p.hp,10);assert.equal(behind.hp,10,'beam does not pierce an immortal tank');
+  assert.equal(r.events.some(e=>e.type==='hit'||e.type==='destroyed'),false);assert.equal(attacker.kills,0);assert.equal(p.deaths,0);
+  r.time=p.powerUntil;r.damage(p,attacker.id);assert.equal(p.hp,9,'protection ends at its deadline');
+  power(r,p,'immortal');r.pickups=[{id:2,type:'machine',x:p.x,y:p.y,expiresAt:r.time+20}];r.step(1/120);
+  r.damage(p,attacker.id);assert.equal(p.hp,8,'another timed power replaces protection');
+});
+
+test('Restore heals to ten immediately without replacing or extending an active power',()=>{
+  const r=arena(),p=r.add('P');r.nextPickup=Infinity;power(r,p,'immortal');const deadline=p.powerUntil;p.hp=1;
+  r.pickups=[{id:1,type:'restore',x:p.x,y:p.y,expiresAt:20}];r.step(.01);
+  assert.equal(p.hp,10);assert.equal(p.power,'immortal');assert.equal(p.powerUntil,deadline);assert.equal(r.pickups.length,0);
+  assert.equal(r.events.at(-1).power,'restore');assert.equal(r.snapshot().players[0].hp,10);
+  p.power=null;p.powerUntil=0;r.pickups=[{id:2,type:'restore',x:p.x,y:p.y,expiresAt:20}];r.step(.01);
+  assert.equal(p.hp,10,'no overheal');assert.equal(p.power,null,'Restore is not a timed power');assert.equal(p.powerUntil,0);
+  p.hp=0;p.respawnAt=10;r.pickups=[{id:3,type:'restore',x:p.x,y:p.y,expiresAt:20}];r.step(.01);
+  assert.equal(p.hp,0,'dead tanks cannot collect Restore');assert.equal(r.pickups.length,1);
+});
+
+test('disabled powers prevent Immortal protection and Restore collection',()=>{
+  const r=arena({powers:false}),p=r.add('P');p.shieldUntil=0;power(r,p,'immortal');r.damage(p,'enemy');assert.equal(p.hp,9);
+  r.pickups=[{id:1,type:'restore',x:p.x,y:p.y,expiresAt:20}];r.step(.01);assert.equal(p.hp,9);assert.equal(r.pickups.length,1);
+});
+
+test('laser clears all enemy bullets on its path but stops at the first enemy tank',()=>{
+  const r=arena({mode:'teams'}),a=r.add('A'),enemy=r.add('B'),friend=r.add('C'),behind=r.add('D');
+  for(const p of [a,enemy,friend,behind]){p.y=500;p.shieldUntil=0;}
+  a.x=100;friend.x=240;enemy.x=600;behind.x=900;a.aim=0;
+  const shot=(id,x,y,owner)=>({id,x,y,vx:0,vy:0,owner:owner.id,team:owner.team,slot:owner.slot,life:3,bounces:0});
+  r.shells=[shot(1,260,500,enemy),shot(2,350,500,behind),shot(3,430,510,enemy),shot(4,400,512,enemy),shot(5,650,500,enemy),shot(6,300,500,a),shot(7,320,500,friend),shot(8,90,500,enemy)];
+  power(r,a,'laser');r.fire(a);
+  assert.deepEqual(r.shells.map(s=>s.id),[4,5,6,7,8]);assert.equal(r.events.filter(e=>e.type==='laser-clear').length,3);
+  assert.equal(enemy.hp,5);assert.equal(friend.hp,10);assert.equal(behind.hp,10);assert.equal(a.kills,0);
+  const beam=r.events.find(e=>e.type==='laser');assert.equal(beam.x,140);assert.equal(beam.y,500);assert.equal(beam.endX,574);
+  a.cool=0;r.fire(a);assert.equal(enemy.hp,0);assert.equal(a.kills,1);assert.equal(behind.hp,10,'killing the first tank still stops that beam');
+});
+
+test('laser does not clear bullets behind cover or pierce spawn shields',()=>{
+  const r=arena(),a=r.add('A'),b=r.add('B');a.x=100;a.y=300;a.aim=0;b.x=500;b.y=300;
+  const shot=(id,x)=>({id,x,y:300,vx:0,vy:0,owner:b.id,slot:b.slot,life:3,bounces:0});
+  r.map.walls=[{x:350,y:250,w:40,h:100}];r.shells=[shot(1,250),shot(2,450)];power(r,a,'laser');r.fire(a);
+  assert.deepEqual(r.shells.map(s=>s.id),[2]);assert.equal(b.hp,10);assert.equal(r.events.at(-1).endX,350);
+  r.map.walls=[];a.cool=0;r.fire(a);assert.equal(b.hp,10,'spawn shield protects from damage');assert(Math.abs(r.events.at(-1).endX-474)<1e-8);
+});
+
+test('laser muzzle follows all aim directions, clips nearby cover, and ends at arena bounds',()=>{
+  for(const aim of [0,Math.PI/2,Math.PI,-Math.PI/2,.63]){
+    const r=arena(),p=r.add('P');p.x=800;p.y=520;p.aim=aim;power(r,p,'laser');r.fire(p);
+    const beam=r.events.at(-1),muzzle=F.muzzle(p.x,p.y,aim);
+    assert(Math.abs(beam.x-muzzle.x)<1e-8);assert(Math.abs(beam.y-muzzle.y)<1e-8);assert.equal(beam.tankLife,p.life);
+    assert(beam.endX>=-1e-8&&beam.endX<=F.width+1e-8&&beam.endY>=-1e-8&&beam.endY<=F.height+1e-8);
+    assert(Math.min(Math.abs(beam.endX),Math.abs(beam.endX-F.width),Math.abs(beam.endY),Math.abs(beam.endY-F.height))<1e-8);
+  }
+  const r=arena(),p=r.add('P');p.x=374;p.y=350;p.aim=0;r.map.walls=[{x:400,y:300,w:80,h:160}];power(r,p,'laser');r.fire(p);
+  const clipped=r.events.at(-1);assert.equal(clipped.x,400);assert.equal(clipped.endX,400);assert.equal(clipped.muzzleDistance,26);
+});
+
+test('team bullets cross teammate hulls and bullets, then still hit an opponent',()=>{
+  const r=arena({mode:'teams'}),a=r.add('A'),b=r.add('B'),c=r.add('C');r.nextPickup=Infinity;
+  a.x=100;c.x=250;b.x=400;for(const p of [a,b,c]){p.y=300;p.shieldUntil=0;}
+  r.shells=[{id:1,x:180,y:300,vx:410,vy:0,owner:a.id,team:a.team,slot:a.slot,life:3,bounces:0},
+    {id:2,x:300,y:300,vx:-410,vy:0,owner:c.id,team:c.team,slot:c.slot,life:3,bounces:0}];
+  for(let i=0;i<64;i++)r.step(1/120);
+  assert.equal(c.hp,10);assert.equal(a.hp,10);assert.equal(b.hp,9);
+  assert.equal(r.events.some(e=>e.type==='shell-clash'),false);
 });

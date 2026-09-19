@@ -43,15 +43,16 @@ test('WASD moves along screen axes, normalized diagonals, independent turret, st
   step(r,1);const stopped=p.x;step(r,.1);assert.equal(p.x,stopped);
   input(r,p,{x:Infinity});assert.equal(p.input.x,0,'nonfinite input rejected');
 });
-test('wall blocking, edge and concrete ricochets, mouse taps and five-hit damage',()=>{
+test('wall blocking, edge and concrete ricochets, mouse taps and ten-hit damage',()=>{
   const r=new Room('TEST'),a=r.add('One'),b=r.add('Two');r.map.walls=[{x:220,y:120,w:65,h:135,z:42}];a.x=180;a.y=180;
   input(r,a,{x:1});step(r,.4);assert(a.x<=194);
   r.shells=[{id:1,x:F.width-10,y:F.height-50,vx:410,vy:0,owner:a.id,slot:0,life:3,bounces:0}];step(r,.05);assert(r.shells[0].vx<0);
   r.shells=[{id:2,x:208,y:200,vx:410,vy:0,owner:a.id,slot:0,life:3,bounces:0}];step(r,.04);assert(r.shells[0].vx<0);
   a.x=100;a.y=330;a.cool=0;input(r,a,{fire:true});input(r,a,{fire:false});r.shells=[];r.step(1/120);assert.equal(r.shells.length,1,'short mouse click survives release between ticks');
   b.x=900;b.y=330;b.shieldUntil=0;
-  for(let i=0;i<5;i++){r.shells=[{id:10+i,x:b.x-24,y:b.y,vx:410,vy:0,owner:a.id,slot:0,life:1,bounces:0}];r.step(1/120);}
-  assert.equal(b.hp,0);assert.equal(a.kills,1);assert.equal(b.deaths,1);step(r,3.1);assert.equal(b.hp,5);assert(b.shieldUntil>r.time);
+  assert.equal(b.hp,10);
+  for(let i=0;i<10;i++){r.shells=[{id:10+i,x:b.x-24,y:b.y,vx:410,vy:0,owner:a.id,slot:0,life:1,bounces:0}];r.step(1/120);assert.equal(b.hp,9-i);}
+  assert.equal(b.hp,0);assert.equal(a.kills,1);assert.equal(b.deaths,1);step(r,3.1);assert.equal(b.hp,10);assert(b.shieldUntil>r.time);
 });
 test('four unique slots, capacity, winner, restart, disconnect expiry',()=>{
   const r=new Room('TEST');const ps=Array.from({length:4},(_,i)=>r.add('P'+i));assert.equal(new Set(ps.map(p=>p.slot)).size,4);assert.equal(r.add('Fifth'),null);
@@ -117,8 +118,7 @@ test('real network: independent sessions, shared state, isolation, validation, r
   const full=await client('ARENA','Fifth');const error=await full.wait(m=>m.type==='error');assert.match(error.message,/full/);
   const info=await fetch(base+'/network-info').then(r=>r.json());assert(Array.isArray(info.urls));
   assert.equal((await fetch(base+'/server.cjs')).status,404);assert.equal((await fetch(base+'/package.json')).status,404);
-  assert.match(await fetch(base+'/').then(r=>r.text()),/Network Arena/);
+  assert.match(await fetch(base+'/').then(r=>r.text()),/Tank Frenzy/);
   assert.equal((await fetch(base+'/client.js')).status,200);
   for(const ws of clients)ws.terminate();
 });
-

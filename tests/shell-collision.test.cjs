@@ -40,7 +40,7 @@ test('intercepted shells cause no tank damage or kills',()=>{
   r.shells=[shell(1,400,300,410,0,a.id),shell(2,415,300,-410,0,b.id)];
   r.step(.1);
   assert.equal(r.shells.length,0);assert.equal(clashes(r).length,1);
-  assert.equal(a.hp,5);assert.equal(b.hp,5);assert.equal(a.kills,0);assert.equal(b.kills,0);
+  assert.equal(a.hp,10);assert.equal(b.hp,10);assert.equal(a.kills,0);assert.equal(b.kills,0);
   assert.equal(r.events.some(e=>e.type==='hit'||e.type==='destroyed'),false);
 });
 
@@ -48,7 +48,7 @@ test('a tank hit before a later shell crossing consumes only the incoming shell'
   const r=arena(),p=r.add('Target');p.x=430;p.y=300;p.shieldUntil=0;
   r.shells=[shell(1,400,300,410,0),shell(2,445,300,-410,0,p.id)];
   r.step(.05);
-  assert.equal(p.hp,4);assert.equal(clashes(r).length,0);
+  assert.equal(p.hp,9);assert.equal(clashes(r).length,0);
   assert.deepEqual(r.shells.map(s=>s.id),[2]);
 });
 

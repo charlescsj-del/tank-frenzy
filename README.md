@@ -2,6 +2,8 @@
 
 A playful, browser-based tank arena with chunky toy tanks, a sunny cartoon quarry, rounded menus and bold lettering. Choose Free-for-All or 2 vs 2 and invite your friends.
 
+Current release: **v1.1.0**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
+
 ## Public Game
 
 Play online at https://tank-frenzy.onrender.com/ to browse active rooms or create a new room. Select a room to preview player names and available spots before joining. The list refreshes every five seconds; reconnecting players keep their reserved spots briefly, and full rooms remain visible but cannot be joined.
@@ -26,7 +28,9 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 
 - Choose **Free-for-All** (every player is an opponent) or **2 vs 2** on the illustrated room browser. Teams are automatically balanced, reconnecting spots stay reserved, and teammates cannot damage or intercept each other's shots. First player/team to ten kills wins. You can practice while waiting for more players.
 - The first player creating a room chooses its mode, **Bullet bouncing** and **Super powers**; both switches default to on. Rules stay fixed for that room. With bouncing off, shells disappear on walls and arena edges. Laser beams stop at cover regardless of the bounce setting.
-- Random pickups grant **10 seconds** of laser (two damage per shot), double gun, speed (+60% movement), or machine gun. A new pickup replaces your current power; death and a new match clear it. Bobbing icon tokens mark pickups. The HUD uses a matching animated icon, seconds remaining and a shrinking timer bar; the room browser's **Power-up guide** explains the symbols. Reduced-motion settings disable decorative motion. Pickups start after six seconds, then at most one appears every twelve seconds; they expire after twenty seconds, with at most two on the field.
+- Random pickups grant **10 seconds** of laser, double gun, speed (+60% movement), machine gun, or **Immortal**. A new timed pickup replaces your current power; death and a new match clear it. **Immortal** uses a star icon and prevents all incoming shell/laser damage, while you can still move and fire. Enemy shells are absorbed; enemy lasers stop at your tank. **Restore** uses a red heart and immediately refills health to 10, preserving any active timed power and its remaining duration. It does not create a timed health effect or overheal.
+- Bobbing icon tokens mark pickups. The HUD uses a matching animated icon, seconds remaining and a shrinking timer bar; the room browser's **Power-up guide** explains the symbols. Immortal has orbiting stars, and Restore briefly displays a heart when collected. Reduced-motion settings disable decorative movement. Pickups start after six seconds, then at most one appears every twelve seconds; they expire after twenty seconds, with at most two on the field.
+- **Laser** deals 5 damage, destroys all enemy shells intersecting the beam before its impact point, and stops at the first enemy tank, wall or arena boundary. It cannot shoot through a tank, even when that tank has a spawn shield or Immortal. In 2 vs 2, shells and lasers pass through teammates and their bullets. The beam starts at the visible muzzle; nearby cover clips it so a barrel pressed against a wall cannot shoot through the wall.
 - **Leave Room** asks for confirmation; cancelling keeps you in the match. Browsers may also show their standard warning when closing or refreshing during play (mobile browser behavior varies). Tank destruction has a louder bass impact; Sound Off still mutes it.
 
 - Phones and tablets with a primary touch input show two thumb controls after joining: drag the left stick to move and the right stick to aim and fire. Release to stop. Mouse/keyboard browsers keep the desktop controls, even in a narrow window.
@@ -39,7 +43,7 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 - Opposing shells destroy each other on contact with a spark and impact sound. You can shoot down incoming fire; your own shells pass through one another. Shell interceptions do not award kills or damage nearby tanks.
 - Mouse pointer: aim the turret independently of movement.
 - Left click: fire. Hold to keep firing, with a 0.42-second cooldown between shots.
-- Five hits destroy a tank; respawn takes three seconds.
+- Tanks have **10 health**: ten normal shells or two unprotected laser hits destroy a full-health tank. Respawn takes three seconds and restores all 10 health. Five compact health pips each represent two health; half pips show odd health values without widening the mobile header.
 - New spawns have a two-second shield, which ends early if they fire.
 - First to ten kills wins; a new match starts automatically after ten seconds.
 - Leaving the tab stops your controls, but other players keep playing.
@@ -51,7 +55,7 @@ The server owns movement, collision, firing cooldowns, health, scoring, and resp
 
 Run `npm test` for simulation and real WebSocket integration checks.
 
-Server work is bounded: at most 96 active shells per room / 24 per player, two pickups, and four players. Machine gun cooldown is 0.12 seconds; laser uses one ray hit check per shot (0.8-second cooldown), with beam animation and particles drawn only in the browser. The menu artwork is cached separately and is never sent in game snapshots. These limits keep the additions modest for small rooms; actual hosting capacity depends on concurrent rooms and the server plan.
+Server work is bounded: at most 96 active shells per room / 24 per player, two pickups, and four players. Machine gun cooldown is 0.12 seconds; laser traces cover and tanks, then checks at most 96 shells per shot (0.8-second cooldown). Immortal adds a damage guard; Restore assigns maximum health once when collected. Neither adds timers or background jobs. Beam animation and particles are drawn only in the browser. The menu artwork is cached separately and is never sent in game snapshots. These limits keep the additions modest for small rooms; actual hosting capacity depends on concurrent rooms and the server plan.
 
 The cartoon rendering, icon motion, countdown display and audio cues run entirely in each browser. They add no simulation ticks, network messages or per-room server objects. The tank collision shapes, aiming and compact 44px touch header are unchanged.
 

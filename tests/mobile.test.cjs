@@ -92,6 +92,31 @@ test('power HUD uses matching icons and time, replaces powers, and clears on dea
   c.run('hudPlayer.hp=0;updateHud(hudState)');assert.equal(badge.hidden,true);
   c.run("hudPlayer.hp=5;hudPlayer.power='speed';hudPlayer.powerRemaining=5;updateHud(hudState)");assert.equal(glyph.attributes.href,'#power-speed');assert.equal(badge.hidden,false);
   c.run('hudPlayer.powerRemaining=0;updateHud(hudState)');assert.equal(badge.hidden,true);
+  c.run("hudPlayer.power='immortal';hudPlayer.powerRemaining=10;updateHud(hudState)");assert.equal(glyph.attributes.href,'#power-immortal');assert.match(badge.attributes['aria-label'],/IMMORTAL/);
+});
+
+test('ten health fits five pips with half pips for single hits',()=>{
+  const c=client();c.run("var hpPlayer={id:'me',name:'Pilot',slot:0,hp:10,kills:0,deaths:0,connected:true};var hpState={players:[hpPlayer]};updateHud(hpState)");
+  const health=()=>c.elements.get('roster').children[0].children[1];
+  assert.equal(health().children.length,5);assert.equal(health().attributes['aria-label'],'10 / 10 health');
+  assert(health().children.every(p=>p.className==='pip'));
+  c.run('hpPlayer.hp=9;updateHud(hpState)');assert.equal(health().children[4].className,'pip half');assert.equal(health().attributes['aria-label'],'9 / 10 health');
+  c.run('hpPlayer.hp=1;updateHud(hpState)');assert.equal(health().children[0].className,'pip half');assert(health().children.slice(1).every(p=>p.className==='pip empty'));
+});
+
+test('laser starts at the rendered muzzle despite movement and newer touch aim',()=>{
+  const c=client();
+  for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2,.63]){
+    c.run(`tanks=[{id:'me',life:7,hp:10,x:805,y:525}];touchAim={x:0,y:-1};var laserEvent={player:'me',tankLife:7,originX:800,originY:520,muzzleDistance:40,endX:800+Math.cos(${angle})*300,endY:520+Math.sin(${angle})*300};var geometry=laserGeometry(laserEvent)`);
+    const start=JSON.parse(c.run('JSON.stringify(geometry.start)')),end=JSON.parse(c.run('JSON.stringify(geometry.end)'));
+    assert(Math.abs(Math.hypot(start.x-805,start.y-525)-40)<1e-8);
+    assert(Math.abs((start.x-805)*(end.y-525)-(start.y-525)*(end.x-805))<1e-7,'muzzle and impact share the rendered turret aim');
+    assert(Math.abs(c.run('geometry.aim-Math.atan2(laserEvent.endY-tanks[0].y,laserEvent.endX-tanks[0].x)'))<1e-8);
+  }
+  c.run("tanks[0].life=8;laserEvent.endX=1200;laserEvent.endY=520;geometry=laserGeometry(laserEvent)");
+  assert.equal(c.run('geometry.start.x'),840,'old beam does not attach to a respawned tank');assert.equal(c.run('geometry.start.y'),520);
+  c.run("tanks=[];laserEvent.endX=826;laserEvent.muzzleDistance=26;geometry=laserGeometry(laserEvent)");
+  assert.equal(c.run('geometry.start.x'),826);assert.equal(c.run('geometry.end.x'),826,'nearby cover clips both muzzle and beam');
 });
 
 test('start and outcome sounds play once per round, including teammate wins and losses',()=>{

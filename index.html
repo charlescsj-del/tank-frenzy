@@ -176,6 +176,11 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 @media(max-width:570px){.edition{display:none}.masthead{justify-content:center;padding:6px 0 17px}.brand{font-size:33px}.page{padding:14px 10px}.game{border-radius:18px}.game.lobby-open .overlay{padding:13px 9px 19px}.game.lobby-open .dialog,.dialog{padding:17px 15px}.dialog h2{font-size:27px}.dialog p{font-size:12px}.mode-card{font-size:12px}.mode-card small{font-size:10px}.power-legend{gap:5px}.tool{font-size:10px}.primary,#createRoom{padding:10px 14px}.join-fields{grid-template-columns:1fr 1fr}#respawn{font-size:12px}}
 @media(pointer:coarse) and (hover:none){.game.mobile-active .arena-header{background:#fff9e8;border-bottom:2px solid #c6d7a6}.game.mobile-active .room-actions{background:#fff9e8;border:2px solid #b2c693;border-radius:0 0 14px 14px}.game.mobile-active .arena-menu-button{border:0;border-radius:8px;box-shadow:none;background:#f6e8b9}.game.mobile-active .pip{height:6px}.game.mobile-active .thumb-pad{background:#fff7d73d}.game.mobile-active .battlebar{border-top:1px solid #b2c88e}.game.mobile-active #powerStatus{top:8px;left:10px}.game.mobile-active .roster-name{font-weight:900}}
 @media(prefers-reduced-motion:reduce){#powerStatus svg{animation:none}#powerMeter{transition:none}}
+/* Health retains five compact pips: each full pip now represents two hits. */
+.health .pip.half{background:linear-gradient(90deg,var(--tank) 50%,transparent 50%);box-shadow:inset 0 0 0 1px var(--tank)}
+#versionBadge{display:none;position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:5;border:1px solid #b9c89b;border-radius:9px;padding:5px 9px;background:#fff9e9ed;color:#5f7551;font:800 11px var(--round-font);pointer-events:none}
+.in-lobby #versionBadge{display:block}.in-lobby.arena-expanded #versionBadge{display:none}
+.power-legend{grid-template-columns:repeat(3,1fr);row-gap:14px}
 </style>
 </head>
 <body>
@@ -184,6 +189,8 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <symbol id="power-double" viewBox="-16 -16 32 32"><g fill="currentColor"><rect x="-11" y="-9" width="8" height="21" rx="3"/><rect x="3" y="-9" width="8" height="21" rx="3"/><path d="M-9-13h4v6h-4zM5-13h4v6H5z"/></g><path d="M-7-5v5M7-5v5" fill="none" stroke="#a279f5" stroke-width="3" stroke-linecap="round"/></symbol>
 <symbol id="power-speed" viewBox="-16 -16 32 32"><path d="M3-13-10 2h8l-2 11L11-4H3z" fill="currentColor"/></symbol>
 <symbol id="power-machine" viewBox="-16 -16 32 32"><g transform="rotate(-26)" fill="currentColor"><rect x="-12" y="-7" width="6" height="16" rx="3"/><rect x="-3" y="-7" width="6" height="16" rx="3"/><rect x="6" y="-7" width="6" height="16" rx="3"/><path d="M-10 12h2v3h-2zM-1 12h2v3h-2zM8 12h2v3H8z"/></g></symbol>
+<symbol id="power-immortal" viewBox="-16 -16 32 32"><path d="m0-14 4.1 8.3 9.2 1.3-6.7 6.5 1.6 9.2L0 7l-8.2 4.3 1.6-9.2-6.7-6.5 9.2-1.3z" fill="#fff5a1"/></symbol>
+<symbol id="power-restore" viewBox="-16 -16 32 32"><path d="M0 12C-23-2-9-19 0-7 9-19 23-2 0 12" fill="#e94d5c"/></symbol>
 </defs></svg>
 <main class="page">
 <header class="masthead"><div class="brand" aria-label="Tank Frenzy"><span>TANK</span> FRENZY</div><div class="edition"><span><i class="live-dot"></i>PLAY WITH FRIENDS</span><span>2–4 PLAYERS · ZERO DOWNLOADS</span></div></header>
@@ -209,10 +216,12 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <img class="mode-banner" src="/mode-banner.webp" alt="Cartoon tanks facing off in a sunny quarry" width="2048" height="768">
 <div class="mode-choices" role="group" aria-label="Game mode"><button id="ffaMode" class="mode-card" type="button" aria-pressed="true"><span class="mode-emblem" aria-hidden="true">✦</span>FREE-FOR-ALL<small>Every tank for itself</small></button><button id="teamMode" class="mode-card" type="button" aria-pressed="false"><span class="mode-emblem" aria-hidden="true">★ ★</span>2 VS 2<small>Team up. No friendly fire.</small></button></div>
 <details class="power-guide"><summary>Power-up guide</summary><div class="power-legend">
-<span style="--power-color:#ef628b"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-laser"/></svg><b>Laser</b><small>Heavy beam</small></span>
+<span style="--power-color:#ef628b"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-laser"/></svg><b>Laser</b><small>5 damage · clears bullets</small></span>
 <span style="--power-color:#a279f5"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-double"/></svg><b>Double gun</b><small>Two shots</small></span>
 <span style="--power-color:#f2b931"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-speed"/></svg><b>Speed</b><small>Move faster</small></span>
 <span style="--power-color:#3fb5cc"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-machine"/></svg><b>Machine gun</b><small>Rapid fire</small></span>
+<span style="--power-color:#e8b933"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-immortal"/></svg><b>Immortal</b><small>No damage for 10s</small></span>
+<span style="--power-color:#ffe0e4"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-restore"/></svg><b>Restore</b><small>Full health instantly</small></span>
 </div></details>
 <div class="lobby-actions"><button id="refreshRooms" class="tool" type="button">REFRESH</button><button id="createRoom" class="tool" type="button">CREATE ROOM</button></div>
 <div id="roomListStatus" role="status"></div><div id="roomList" class="room-list"></div>
@@ -223,7 +232,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <span id="networkNote" class="hint">WASD / MOVE &nbsp; MOUSE / AIM &nbsp; LEFT CLICK / FIRE</span>
 </div></div>
 </div>
-<div class="battlebar"><span><i class="live-dot"></i><b id="status">READY TO CONNECT</b></span><span>YOUR COLOR = YOUR SHELLS &nbsp; / &nbsp; FIVE-HIT HULLS</span></div>
+<div class="battlebar"><span><i class="live-dot"></i><b id="status">READY TO CONNECT</b></span><span>YOUR COLOR = YOUR SHELLS &nbsp; / &nbsp; TEN-HIT HULLS</span></div>
 <div id="leaveDialog" class="leave-confirm" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Leave this room?</h2><p>Your spot will be released. You can join again from the room browser.</p><button id="cancelLeave" class="tool" type="button">KEEP PLAYING</button><button id="confirmLeave" class="primary" type="button">LEAVE ROOM</button></div></div>
 </section>
 <section class="bottom">
@@ -236,6 +245,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 </section>
 <footer><span>FIRST TO 10 / 2 - 4 PLAYERS / NO INSTALL FOR FRIENDS</span><span>TANK FRENZY &copy; 2026</span></footer>
 </main>
+<small id="versionBadge" aria-label="Game version"></small>
 <script src="/shared.js"></script>
 <script src="/client.js"></script>
 </body>

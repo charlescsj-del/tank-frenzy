@@ -27,7 +27,7 @@ class Room {
   add(name){
     if(this.players.size>=F.maxPlayers)return null;
     const slot=Array.from({length:F.maxPlayers},(_,i)=>i).find(i=>![...this.players.values()].some(p=>p.slot===i));
-    const p={id:randomUUID(),slot,name:name||F.palette[slot].name,x:0,y:0,a:0,aim:0,hp:5,kills:0,deaths:0,cool:0,respawnAt:0,shieldUntil:0,connected:true,disconnectedAt:0,input:neutral(),lastInput:this.time,seq:-1,life:0};
+    const p={id:randomUUID(),slot,name:name||F.palette[slot].name,x:0,y:0,a:0,aim:0,hp:F.maxHealth,kills:0,deaths:0,cool:0,respawnAt:0,shieldUntil:0,connected:true,disconnectedAt:0,input:neutral(),lastInput:this.time,seq:-1,life:0};
     const teams=[0,1].map(team=>[...this.players.values()].filter(t=>t.team===team).length);
     p.team=this.settings.mode==='teams'?(teams[0]<=teams[1]?0:1):null;
     this.ownerId??=p.id;
@@ -39,7 +39,7 @@ class Room {
     const choices=this.map.spawns.map((xy,i)=>({xy,score:others.length?Math.min(...others.map(t=>Math.hypot(t.x-xy[0],t.y-xy[1]))):i===p.slot?1:0})).sort((a,b)=>b.score-a.score);
     const free=choices.find(c=>!others.some(t=>Math.hypot(t.x-c.xy[0],t.y-c.xy[1])<55));
     if(!free){p.hp=0;p.respawnAt=this.time+.5;return;}
-    [p.x,p.y]=free.xy;p.hp=5;p.life++;p.respawnAt=0;p.cool=.3;p.shieldUntil=this.time+2;p.input=neutral();p.pendingShot=false;p.a=p.x<F.width/2?0:Math.PI;p.aim=p.a;
+    [p.x,p.y]=free.xy;p.hp=F.maxHealth;p.life++;p.respawnAt=0;p.cool=.3;p.shieldUntil=this.time+2;p.input=neutral();p.pendingShot=false;p.a=p.x<F.width/2?0:Math.PI;p.aim=p.a;
   }
   setInput(p,m){
     if(!Number.isSafeInteger(m.seq)||m.seq<=p.seq||!Number.isFinite(m.x)||!Number.isFinite(m.y)||!Number.isFinite(m.aimX)||!Number.isFinite(m.aimY)||typeof m.fire!=='boolean')return;
@@ -50,12 +50,15 @@ class Room {
   disconnect(p){p.connected=false;p.disconnectedAt=this.time;p.input=neutral();p.pendingShot=false;}
   blocked(x,y,p){return x<26||x>F.width-26||y<26||y>F.height-26||this.map.walls.some(w=>hitRect(x,y,26,w))||[...this.players.values()].some(t=>t!==p&&t.connected&&t.hp>0&&Math.hypot(x-t.x,y-t.y)<50);}
   friendly(a,b){return this.settings.mode==='teams'&&a.team!=null&&a.team===b.team;}
+  invulnerable(p){return p.shieldUntil>this.time||(this.settings.powers&&p.power==='immortal'&&p.powerUntil>this.time);}
   damage(p,owner,amount=1){
+    const attacker=this.players.get(owner);
+    if(p.hp<=0||this.invulnerable(p)||(attacker&&this.friendly(attacker,p)))return;
     p.hp=Math.max(0,p.hp-amount);const dead=p.hp===0;
     this.emit(dead?'destroyed':'hit',{x:p.x,y:p.y,slot:p.slot,player:p.id});
     if(!dead)return;
     p.deaths++;p.respawnAt=this.time+3;p.input=neutral();p.pendingShot=false;p.power=null;p.powerUntil=0;
-    const attacker=this.players.get(owner);if(!attacker)return;
+    if(!attacker)return;
     attacker.kills++;
     const teams=this.settings.mode==='teams',score=teams?++this.teamScores[attacker.team]:attacker.kills;
     if(score>=F.targetScore){this.winner={id:attacker.id,team:attacker.team,name:teams?(attacker.team===0?'Orange team':'Blue team'):attacker.name};this.restartAt=this.time+10;}
@@ -79,8 +82,20 @@ class Room {
       const t=contactTime(p.x-enemy.x,p.y-enemy.y,dx,dy,26);
       if(t!==null&&t<end){end=t;target=enemy;}
     }
-    this.emit('laser',{x:p.x,y:p.y,endX:p.x+dx*end,endY:p.y+dy*end,slot:p.slot,player:p.id});
-    if(target&&target.shieldUntil<=this.time)this.damage(target,p.id,2);
+    // Trace from the hull first so a muzzle inside nearby cover cannot shoot through it.
+    const endX=p.x+dx*end,endY=p.y+dy*end,muzzleDistance=Math.min(F.barrelLength,length*end);
+    const muzzle=F.muzzle(p.x,p.y,p.aim,muzzleDistance),beamX=endX-muzzle.x,beamY=endY-muzzle.y;
+    if(Math.hypot(beamX,beamY)>1e-6){
+      for(const shell of this.shells){
+        if(shell.life<=0||shell.owner===p.id||this.friendly(p,shell))continue;
+        if(contactTime(muzzle.x-shell.x,muzzle.y-shell.y,beamX,beamY,F.laserRadius+5)!==null){
+          shell.life=0;this.emit('laser-clear',{x:shell.x,y:shell.y,slot:shell.slot});
+        }
+      }
+      this.shells=this.shells.filter(shell=>shell.life>0);
+    }
+    this.emit('laser',{...muzzle,endX,endY,originX:p.x,originY:p.y,muzzleDistance,tankLife:p.life,slot:p.slot,player:p.id});
+    if(target)this.damage(target,p.id,F.laserDamage);
   }
   fire(p){
     if(p.cool>0||this.winner)return;
@@ -120,7 +135,15 @@ class Room {
       const length=Math.hypot(dx,dy);
       const speed=this.settings.powers&&p.power==='speed'?272:170;
       if(length){dx=dx/length*speed*dt;dy=dy/length*speed*dt;p.a=Math.atan2(dy,dx);if(!this.blocked(p.x+dx,p.y,p))p.x+=dx;if(!this.blocked(p.x,p.y+dy,p))p.y+=dy;}
-      if(this.settings.powers){const index=this.pickups.findIndex(drop=>Math.hypot(drop.x-p.x,drop.y-p.y)<40);if(index>=0){const [drop]=this.pickups.splice(index,1);p.power=drop.type;p.powerUntil=this.time+F.powerDuration;this.emit('pickup',{x:p.x,y:p.y,slot:p.slot,player:p.id,power:p.power});}}
+      if(this.settings.powers){
+        const index=this.pickups.findIndex(drop=>Math.hypot(drop.x-p.x,drop.y-p.y)<40);
+        if(index>=0){
+          const [drop]=this.pickups.splice(index,1);
+          if(drop.type==='restore')p.hp=F.maxHealth;
+          else{p.power=drop.type;p.powerUntil=this.time+F.powerDuration;}
+          this.emit('pickup',{x:p.x,y:p.y,slot:p.slot,player:p.id,power:drop.type});
+        }
+      }
       if(input.fire||p.pendingShot){this.fire(p);p.pendingShot=false;}
       if(this.winner)return;
     }

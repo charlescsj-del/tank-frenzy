@@ -1,0 +1,38 @@
+# Changelog
+
+Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
+
+## 1.1.0
+
+### Added
+
+- Version badge in the bottom-right corner of the main room browser.
+- **Immortal** pickup: star icon, 10 seconds of protection from incoming damage, and animated stars around the tank. Moving and firing remain available. Collecting another timed power replaces it.
+- **Restore** pickup: red heart icon and instant restoration to maximum health. Preserves an existing timed power without extending its duration; shows a brief heart on collection.
+- This repository changelog.
+
+### Changed
+
+- Tank health doubled from 5 to 10. Normal shells still deal 1 damage. Spawning and respawning restore 10 health.
+- Five compact HUD pips each hold two health, with half-filled pips for odd health values.
+- Laser damage increased from 2 to 5. A full-health, unprotected tank now takes two laser hits.
+- A laser clears every enemy bullet intersecting its path before the first tank or cover. Friendly and own bullets remain untouched.
+- Power-up guide now explains all six pickups.
+
+### Fixed
+
+- Laser visuals start at the barrel opening, using the same projected muzzle and aim as the rendered turret, including interpolation and touch aiming.
+- A laser stops at the first enemy tank, including an invulnerable tank, and cannot fire through nearby cover when its barrel overlaps it.
+- Preserved and regression-tested 2 vs 2 pass-through: bullets and lasers pass through teammates; teammates' bullets do not intercept one another.
+
+### Performance
+
+- Existing four-player, two-pickup and 96-shell room limits remain in place. Laser bullet clearing is a bounded scan per laser shot; Immortal and Restore add no background jobs.
+
+## 1.0.0 — Previous baseline
+
+- Tank Frenzy branding, cartoon battlefield and illustrated lobby, animated power icons and countdowns.
+- Menu, round-start, pickup, victory and defeat audio cues; louder destruction effects.
+- Free-for-All and 2 vs 2 rooms, room discovery, player previews, and optional bouncing bullets and powers.
+- Laser, double gun, speed and machine gun pickups.
+- Enemy bullet interception, leave confirmation, and a compact mobile HUD with a following camera and twin-stick controls.
