@@ -64,6 +64,23 @@ test('desktop hides thumb controls; touch controls wait for joining',()=>{
   mobile.run('joined=false;updateTouchControls()');assert.equal(mobile.elements.get('thumbControls').hidden,true);
 });
 
+test('leaving requires confirmation and cancellation keeps the player in the room',()=>{
+  const c=client();c.sandbox.clearTimeout=()=>{};c.sandbox.history={replaceState(){}};
+  c.elements.get('leave').events.click();assert.equal(c.elements.get('leaveDialog').hidden,false);
+  assert.equal(c.sent.some(m=>m.type==='leave'),false);
+  c.elements.get('cancelLeave').events.click();assert.equal(c.run('joined'),true);assert.equal(c.elements.get('leaveDialog').hidden,true);
+  c.run('socket.close=()=>{}');c.elements.get('leave').events.click();c.elements.get('confirmLeave').events.click();
+  assert.equal(c.run('joined'),false);assert(c.sent.some(m=>m.type==='leave'));
+});
+
+test('mode choice filters rooms and new room options default to enabled',()=>{
+  const c=client();c.run('lobbyRooms=[{code:"SOLO",settings:{mode:"ffa"},players:[],capacity:4,available:4},{code:"TEAM",settings:{mode:"teams"},players:[],capacity:4,available:4}]');
+  c.elements.get('teamMode').events.click();assert.equal(c.elements.get('roomList').children.length,1);
+  assert.match(c.elements.get('roomList').children[0].textContent,/TEAM/);
+  c.elements.get('createRoom').events.click();assert.equal(c.elements.get('gameMode').value,'teams');
+  assert.equal(c.elements.get('bounceOption').checked,true);assert.equal(c.elements.get('powersOption').checked,true);
+});
+
 test('plain URLs open the room browser while room links keep the prefilled join form',()=>{
   const plain=client();assert.equal(plain.elements.get('roomBrowser').hidden,false);assert.equal(plain.elements.get('joinFields').hidden,true);
   const linked=client(false,'http://localhost:8765/?room=quarry');

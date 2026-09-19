@@ -40,6 +40,25 @@
 #roomPlayers{max-height:90px;overflow-y:auto;padding-left:20px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
 #joinSelected{width:100%}.primary:disabled{cursor:default}
 #browseRooms{margin-top:12px}
+.mode-banner{display:block;width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:10px}
+.in-lobby .intro,.in-lobby .bottom,.in-lobby footer{display:none}
+.game.lobby-open{margin-top:16px}
+.game.lobby-open .arena-header,.game.lobby-open .battlebar,.game.lobby-open canvas,.game.lobby-open .stage-label{display:none}
+.game.lobby-open .overlay{position:relative;padding:16px;background:#d9dfca}
+.game.lobby-open .dialog{width:min(560px,100%);max-height:none;overflow:visible}
+.game.lobby-open .mode-banner{height:clamp(130px,25vw,210px)}
+.mode-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mode-card{padding:14px 8px;min-height:70px;border:2px solid #c7ceba;border-radius:8px;background:#f2eedf;color:#344632;font-weight:bold}
+.mode-card small{display:block;margin-top:5px;font-weight:normal;font-size:11px}
+.mode-card[aria-pressed=true]{border-color:#d77238;background:#fff0d1;box-shadow:0 3px 0 #d7723833}
+.room-settings{border:1px solid #c5cdb8;border-radius:6px;padding:10px;margin:12px 0;text-align:left;font-size:12px}
+.room-settings label{display:flex;align-items:center;gap:8px;min-height:36px}
+.room-settings select{flex:1;min-height:36px;font:inherit}.room-settings input{width:20px;height:20px}
+.room-settings p,#roomRules{font-size:11px!important;line-height:1.5;margin:4px 0!important}
+#powerStatus{position:absolute;top:8px;left:12px;background:#fff1a2ed;border:1px solid #d7aa50;border-radius:5px;padding:7px 10px;font:bold 11px Consolas,monospace;pointer-events:none}
+#powerStatus:empty{display:none}
+.leave-confirm{position:fixed;inset:0;z-index:2000;background:#18281899;display:grid;place-items:center;padding:20px}
+.leave-confirm .dialog{width:min(360px,100%)}.leave-confirm button{min-height:44px;margin:4px}
 #viewNote{margin:0;padding:8px 12px;background:#f6f6ef;font-size:11px;color:#4f5c47}
 #viewNote:empty{display:none}
 .thumb-controls{display:none;position:absolute;inset:0;pointer-events:none;z-index:2}
@@ -126,6 +145,7 @@
 <canvas id="game" width="1120" height="610" tabindex="0" aria-label="Tank arena. Use W A S D to move, point the mouse to aim, and hold left click to fire."></canvas>
 <div class="stage-label"><b id="mapLabel">RANDOM MAP / NEW EACH MATCH</b><span>1600 x 1040 / 0.42 SECOND RELOAD</span></div>
 <div id="respawn" role="status" aria-live="polite"></div>
+<div id="powerStatus" role="status" aria-live="off"></div>
 <div id="thumbControls" class="thumb-controls" hidden>
 <div class="thumb-control"><div id="moveStick" class="thumb-pad" role="group" aria-label="Move: drag with your left thumb"><span></span></div>MOVE</div>
 <div class="thumb-control"><div id="aimStick" class="thumb-pad" role="group" aria-label="Aim and fire: drag with your right thumb, release to stop firing"><span></span></div>AIM + FIRE</div>
@@ -133,16 +153,19 @@
 <div id="overlay" class="overlay"><div class="dialog">
 <div id="dialogTag" class="eyebrow">ASSEMBLE YOUR RIVALS</div><h2 id="dialogTitle">Join the field.</h2><p id="dialogText">For 2-4 players, each in their own browser. Share a room code and explore a new random battlefield each match.</p>
 <section id="roomBrowser" class="room-browser" hidden aria-label="Available rooms">
+<img class="mode-banner" src="/mode-banner.webp" alt="Cartoon tanks facing off in a sunny quarry" width="2048" height="768">
+<div class="mode-choices" role="group" aria-label="Game mode"><button id="ffaMode" class="mode-card" type="button" aria-pressed="true">FREE-FOR-ALL<small>Every tank for itself</small></button><button id="teamMode" class="mode-card" type="button" aria-pressed="false">2 VS 2<small>Team up. No friendly fire.</small></button></div>
 <div class="lobby-actions"><button id="refreshRooms" class="tool" type="button">REFRESH</button><button id="createRoom" class="tool" type="button">CREATE ROOM</button></div>
 <div id="roomListStatus" role="status"></div><div id="roomList" class="room-list"></div>
-<div id="roomDetails" class="room-details" hidden><strong id="selectedRoomName"></strong><ul id="roomPlayers" aria-label="Players in selected room"></ul><div id="roomCapacity"></div><button id="joinSelected" class="primary" type="button" disabled>JOIN THIS ROOM</button></div>
+<div id="roomDetails" class="room-details" hidden><strong id="selectedRoomName"></strong><p id="roomRules"></p><ul id="roomPlayers" aria-label="Players in selected room"></ul><div id="roomCapacity"></div><button id="joinSelected" class="primary" type="button" disabled>JOIN THIS ROOM</button></div>
 </section>
-<form id="joinForm"><div id="joinFields" class="join-fields"><label>CALLSIGN<input id="callsign" placeholder="Your name" maxlength="16" autocomplete="off"></label><label>ROOM CODE<input id="roomInput" maxlength="16" pattern="[A-Za-z0-9-]+" required autocomplete="off"></label></div><button id="action" class="primary" type="submit">Join arena &gt;</button></form>
+<form id="joinForm"><div id="joinFields" class="join-fields"><label>CALLSIGN<input id="callsign" placeholder="Your name" maxlength="16" autocomplete="off"></label><label>ROOM CODE<input id="roomInput" maxlength="16" pattern="[A-Za-z0-9-]+" required autocomplete="off"></label></div><fieldset id="roomSettings" class="room-settings"><legend>New room rules</legend><label>Mode <select id="gameMode"><option value="ffa">Free-for-All</option><option value="teams">2 vs 2</option></select></label><label><input id="bounceOption" type="checkbox" checked>Bullet bouncing</label><label><input id="powersOption" type="checkbox" checked>Super powers</label><p>The first player sets the rules. Existing rooms keep their settings.</p></fieldset><button id="action" class="primary" type="submit">Join arena &gt;</button></form>
 <button id="browseRooms" class="tool" type="button">BROWSE ROOMS</button>
 <span id="networkNote" class="hint">WASD / MOVE &nbsp; MOUSE / AIM &nbsp; LEFT CLICK / FIRE</span>
 </div></div>
 </div>
 <div class="battlebar"><span><i class="live-dot"></i><b id="status">READY TO CONNECT</b></span><span>YOUR COLOR = YOUR SHELLS &nbsp; / &nbsp; FIVE-HIT HULLS</span></div>
+<div id="leaveDialog" class="leave-confirm" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="leaveTitle"><h2 id="leaveTitle">Leave this room?</h2><p>Your spot will be released. You can join again from the room browser.</p><button id="cancelLeave" class="tool" type="button">KEEP PLAYING</button><button id="confirmLeave" class="primary" type="button">LEAVE ROOM</button></div></div>
 </section>
 <section class="bottom">
 <div id="mobileHelp" class="mobile-help" hidden><strong>Two thumbs. Full control.</strong><p>Left thumb to move. Right thumb to aim and fire. Release either control to stop.</p><p>The close view follows your tank. Open Menu for Full Map, sound, fullscreen, invite and leave controls. Turn your phone sideways for a wider battlefield.</p></div>

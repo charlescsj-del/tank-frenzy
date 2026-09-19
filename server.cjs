@@ -9,15 +9,15 @@ const {Room}=require('./game-server.cjs');
 const {maxPlayers}=require('./shared.js');
 function createGameServer(){
   const rooms=new Map(),sessions=new Map();
-  const files={'/':['index.html','text/html'],'/index.html':['index.html','text/html'],'/client.js':['client.js','text/javascript'],'/shared.js':['shared.js','text/javascript']};
+  const files={'/':['index.html','text/html'],'/index.html':['index.html','text/html'],'/client.js':['client.js','text/javascript'],'/shared.js':['shared.js','text/javascript'],'/mode-banner.webp':['mode-banner.webp','image/webp']};
   const server=http.createServer((req,res)=>{
     const url=new URL(req.url,'http://localhost');
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     if(req.method!=='GET'){res.writeHead(405);res.end();return;}
     if(url.pathname==='/rooms'){
       const available=[...rooms.values()].filter(room=>room.players.size>0).map(room=>({
-        code:room.code,capacity:maxPlayers,available:maxPlayers-room.players.size,
-        players:[...room.players.values()].map(({name,slot,connected})=>({name,slot,connected}))
+        code:room.code,capacity:maxPlayers,available:maxPlayers-room.players.size,settings:room.settings,
+        players:[...room.players.values()].map(({name,slot,connected,team})=>({name,slot,connected,team}))
       })).sort((a,b)=>a.code.localeCompare(b.code));
       res.setHeader('Content-Type','application/json');res.end(JSON.stringify({rooms:available}));return;
     }
@@ -27,6 +27,7 @@ function createGameServer(){
       res.setHeader('Content-Type','application/json');res.end(JSON.stringify({urls}));return;
     }
     const file=files[url.pathname];if(!file){res.writeHead(404);res.end('Not found');return;}
+    if(url.pathname==='/mode-banner.webp')res.setHeader('Cache-Control','public, max-age=86400');
     res.setHeader('Content-Type',file[1]+'; charset=utf-8');fs.createReadStream(path.join(__dirname,file[0])).pipe(res);
   });
   const wss=new WebSocketServer({noServer:true,maxPayload:2048});
@@ -56,7 +57,8 @@ function createGameServer(){
         else{
           if(msg.mode==='create'&&rooms.has(code)&&rooms.get(code).players.size>0){send(ws,{type:'error',message:'That room already exists. Choose another code or browse rooms to join it.'});ws.close();return;}
           if(msg.mode==='join'&&(!rooms.has(code)||rooms.get(code).players.size===0)){send(ws,{type:'error',message:'That room is no longer available. Browse rooms or create a new one.'});ws.close();return;}
-          if(!rooms.has(code)){if(rooms.size>=32){send(ws,{type:'error',message:'Server is full. Try an existing room.'});ws.close();return;}rooms.set(code,new Room(code));}
+          if(rooms.has(code)&&rooms.get(code).players.size===0)rooms.delete(code);
+          if(!rooms.has(code)){if(rooms.size>=32){send(ws,{type:'error',message:'Server is full. Try an existing room.'});ws.close();return;}rooms.set(code,new Room(code,msg.settings));}
           const room=rooms.get(code);const name=typeof msg.name==='string'?msg.name.replace(/[\x00-\x1f<>]/g,'').trim().slice(0,16):'';
           const player=room.add(name);if(!player){send(ws,{type:'error',message:'Room full (4 players). Choose another room code.'});ws.close();return;}
           session={room,player,token:randomBytes(24).toString('hex'),ws};sessions.set(session.token,session);

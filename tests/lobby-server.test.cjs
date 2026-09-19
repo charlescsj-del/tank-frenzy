@@ -24,7 +24,7 @@ function server(){
     }};
   vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../server.cjs'),'utf8'),sandbox);
   const game=sandbox.module.exports.createGameServer();
-  function join(room,mode,name='Player',token){const socket=new Socket();game.wss.emit('connection',socket);socket.emit('message',JSON.stringify({type:'join',room,mode,name,token}));return socket;}
+  function join(room,mode,name='Player',token,settings){const socket=new Socket();game.wss.emit('connection',socket);socket.emit('message',JSON.stringify({type:'join',room,mode,name,token,settings}));return socket;}
   function list(){let body,headers={};game.server.emit('request',{url:'/rooms',method:'GET'},{setHeader(k,v){headers[k]=v;},end(raw){body=JSON.parse(raw);}});return {body,headers};}
   return {game,join,list};
 }
@@ -36,7 +36,7 @@ test('room directory starts empty and lists only public player details',()=>{
   assert.deepEqual(body.rooms.map(r=>r.code),['ALPHA','ZETA']);
   assert.equal(body.rooms[0].available,2);assert.equal(body.rooms[0].capacity,4);
   assert.deepEqual(body.rooms[0].players.map(p=>p.name),['Alice','Bob']);
-  assert.deepEqual(Object.keys(body.rooms[0].players[0]).sort(),['connected','name','slot']);
+  assert.deepEqual(Object.keys(body.rooms[0].players[0]).sort(),['connected','name','slot','team']);
   assert.equal(headers['Cache-Control'],'no-store');
 });
 
@@ -67,4 +67,11 @@ test('leaving or expired reservations remove rooms from discovery',()=>{
   assert.equal(s.list().body.rooms.length,0);
   const b=s.join('EXPIRE','create');b.close();s.game.rooms.get('EXPIRE').step(16);
   assert.equal(s.list().body.rooms.length,0);
+});
+
+test('the creator sets rules and later joiners cannot overwrite them',()=>{
+  const s=server();s.join('TEAMS','create','Host',null,{mode:'teams',bouncing:false,powers:false});
+  s.join('TEAMS','join','Guest',null,{mode:'ffa',bouncing:true,powers:true});
+  const room=s.list().body.rooms[0];assert.deepEqual(room.settings,{mode:'teams',bouncing:false,powers:false});
+  assert.deepEqual(room.players.map(p=>p.team),[0,1]);
 });

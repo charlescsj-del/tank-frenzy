@@ -22,6 +22,11 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 
 ## Controls and Rules
 
+- Choose **Free-for-All** (every player is an opponent) or **2 vs 2** on the illustrated room browser. Teams are automatically balanced, reconnecting spots stay reserved, and teammates cannot damage or intercept each other's shots. First player/team to ten kills wins. You can practice while waiting for more players.
+- The first player creating a room chooses its mode, **Bullet bouncing** and **Super powers**; both switches default to on. Rules stay fixed for that room. With bouncing off, shells disappear on walls and arena edges. Laser beams stop at cover regardless of the bounce setting.
+- Random pickups grant **10 seconds** of laser (two damage per shot), double gun, speed (+60% movement), or machine gun. A new pickup replaces your current power; death and a new match clear it. The HUD shows the power and remaining time. Pickups start after six seconds, then at most one appears every twelve seconds; they expire after twenty seconds, with at most two on the field.
+- **Leave Room** asks for confirmation; cancelling keeps you in the match. Browsers may also show their standard warning when closing or refreshing during play (mobile browser behavior varies). Tank destruction has a louder bass impact; Sound Off still mutes it.
+
 - Phones and tablets with a primary touch input show two thumb controls after joining: drag the left stick to move and the right stick to aim and fire. Release to stop. Mouse/keyboard browsers keep the desktop controls, even in a narrow window.
 - During touch play, the arena fills the available browser height. A single 44px top row shows the room, your name and health, and **Menu**. Open Menu for fullscreen, invite, leave, sound and view controls. A close camera follows your tank so tanks and nearby cover stay large. Choose **Full Map** for an overview and **Close View** to return; this changes only your view, not movement, aiming, or the shared map. Landscape gives you a wider view. Leaving the room restores the page.
 - Full Screen expands the arena on desktop and mobile. Where browser fullscreen is unavailable or rejected, it falls back to an expanded view inside the browser; browser bars may remain visible. Use Exit Full Screen to return. Landscape is recommended on phones.
@@ -42,3 +47,7 @@ The server owns movement, collision, firing cooldowns, health, scoring, and resp
 ## Checks
 
 Run `npm test` for simulation and real WebSocket integration checks.
+
+Server work is bounded: at most 96 active shells per room / 24 per player, two pickups, and four players. Machine gun cooldown is 0.12 seconds; laser uses one ray hit check per shot (0.8-second cooldown), with beam animation and particles drawn only in the browser. The menu artwork is cached separately and is never sent in game snapshots. These limits keep the additions modest for small rooms; actual hosting capacity depends on concurrent rooms and the server plan.
+
+Menu artwork: `mode-banner.webp`, generated with the built-in image tool and compressed for mobile loading. Prompt: friendly, chunky cartoon toy tanks in a sunny quarry, orange/green facing blue/purple, warm cream/sage colors, wide composition, no text or logos.

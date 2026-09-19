@@ -1,6 +1,9 @@
 (function(root) {
   const data = {
     width: 1600, height: 1040, maxPlayers: 4, targetScore: 10, fireCooldown: .42, shellSpeed: 410,
+    maxShells:96,maxShellsPerPlayer:24,powerDuration:10,pickupInterval:12,pickupLifetime:20,
+    powers:['laser','double','speed','machine'],
+    powerLabels:{laser:'LASER',double:'DOUBLE GUN',speed:'SPEED',machine:'MACHINE GUN'},
     palette: [
       {name:'Ember',body:'#dc7949',bullet:'#ff782e'},
       {name:'Glacier',body:'#619db8',bullet:'#39bfff'},
@@ -20,4 +23,3 @@
   if(typeof module !== 'undefined') module.exports=data;
   else root.FIELD=data;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
-
