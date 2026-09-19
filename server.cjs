@@ -91,7 +91,7 @@ function createGameServer(){
 if(require.main===module){
   const game=createGameServer(),port=Number(process.env.PORT)||8765;
   game.server.on('error',error=>{console.error(`Cannot start game: ${error.message}`);process.exit(1);});
-  game.server.listen(port,'0.0.0.0',()=>{console.log(`IRON / FIELD: http://localhost:${port}`);for(const list of Object.values(os.networkInterfaces()))for(const n of list||[])if(n.family==='IPv4'&&!n.internal)console.log(`Network: http://${n.address}:${port}`);});
+  game.server.listen(port,'0.0.0.0',()=>{console.log(`Tank Frenzy: http://localhost:${port}`);for(const list of Object.values(os.networkInterfaces()))for(const n of list||[])if(n.family==='IPv4'&&!n.internal)console.log(`Network: http://${n.address}:${port}`);});
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>game.close().then(()=>process.exit(0)));
 }
 module.exports={createGameServer};

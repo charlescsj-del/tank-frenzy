@@ -9,7 +9,7 @@ function client(mobile=true,url='http://localhost:8765'){
     const events={},classes=new Set(),captures=new Set();
     return {events,children:[],hidden:false,textContent:'',style:{setProperty(){}},replaceChildren(...items){this.children=items;},append(...items){this.children.push(...items);},
       classList:{add:n=>classes.add(n),remove:n=>classes.delete(n),toggle(n,on){on?classes.add(n):classes.delete(n);},contains:n=>classes.has(n)},
-      addEventListener(n,f){events[n]=f;},setAttribute(){},focus(){},
+      attributes:{},addEventListener(n,f){events[n]=f;},setAttribute(n,v){this.attributes[n]=v;},focus(){},
       getContext:()=>({}),getBoundingClientRect:()=>({left:0,top:0,width:100,height:100}),
       setPointerCapture:id=>captures.add(id),hasPointerCapture:id=>captures.has(id),releasePointerCapture:id=>captures.delete(id)};
   }
@@ -79,6 +79,29 @@ test('mode choice filters rooms and new room options default to enabled',()=>{
   assert.match(c.elements.get('roomList').children[0].textContent,/TEAM/);
   c.elements.get('createRoom').events.click();assert.equal(c.elements.get('gameMode').value,'teams');
   assert.equal(c.elements.get('bounceOption').checked,true);assert.equal(c.elements.get('powersOption').checked,true);
+});
+
+test('power HUD uses matching icons and time, replaces powers, and clears on death or expiry',()=>{
+  const c=client();
+  c.run(`var hudPlayer={id:'me',name:'Pilot',slot:0,hp:5,kills:0,deaths:0,connected:true,power:'laser',powerRemaining:9.2};var hudState={players:[hudPlayer],settings:{mode:'ffa'}};updateHud(hudState)`);
+  const badge=c.elements.get('powerStatus'),glyph=c.elements.get('powerGlyph'),timer=c.elements.get('powerTime');
+  assert.equal(badge.hidden,false);assert.equal(glyph.attributes.href,'#power-laser');assert.equal(timer.textContent,'10s');assert.match(badge.attributes['aria-label'],/LASER.*10 seconds/);
+  c.run("hudPlayer.power='double';hudPlayer.powerRemaining=2.3;updateHud(hudState)");
+  assert.equal(glyph.attributes.href,'#power-double');assert.equal(timer.textContent,'3s');assert.equal(badge.classList.contains('expiring'),true);
+  const fraction=Number(c.elements.get('powerMeter').style.transform.match(/[\d.]+/)[0]);assert(Math.abs(fraction-.23)<.001);
+  c.run('hudPlayer.hp=0;updateHud(hudState)');assert.equal(badge.hidden,true);
+  c.run("hudPlayer.hp=5;hudPlayer.power='speed';hudPlayer.powerRemaining=5;updateHud(hudState)");assert.equal(glyph.attributes.href,'#power-speed');assert.equal(badge.hidden,false);
+  c.run('hudPlayer.powerRemaining=0;updateHud(hudState)');assert.equal(badge.hidden,true);
+});
+
+test('start and outcome sounds play once per round, including teammate wins and losses',()=>{
+  const c=client();
+  c.run(`var cues=[];playCue=kind=>cues.push(kind);var round={map:{id:11},players:[{id:'me',team:0}],settings:{mode:'teams'},winner:null};updateMatchSounds(round);updateMatchSounds(round)`);
+  assert.equal(c.run('cues.join()'),'start');
+  c.run("round.winner={id:'teammate',team:0};updateMatchSounds(round);updateMatchSounds(round)");assert.equal(c.run('cues.join()'),'start,win');
+  c.run("round.map.id=12;round.winner=null;updateMatchSounds(round);round.winner={id:'other',team:1};updateMatchSounds(round);updateMatchSounds(round)");assert.equal(c.run('cues.join()'),'start,win,start,lose');
+  c.run("round.map.id=13;round.settings.mode='ffa';round.winner=null;updateMatchSounds(round);round.winner={id:'me'};updateMatchSounds(round)");assert.equal(c.run('cues.at(-1)'),'win');
+  c.run("round.map.id=14;round.winner={id:'other'};updateMatchSounds(round)");assert.equal(c.run('cues.at(-1)'),'lose');
 });
 
 test('plain URLs open the room browser while room links keep the prefilled join form',()=>{

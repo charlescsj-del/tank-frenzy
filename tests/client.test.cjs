@@ -32,5 +32,12 @@ test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
     sound=false;updateMovementSound(170);assert.equal(engine.gain.gain.value,0,'mute suppresses movement sound');
     sound=true;updateMovementSound(170);assert(engine.gain.gain.value>0);
     joined=false;updateMovementSound(170);assert.equal(engine.gain.gain.value,0,'disconnect stops engine');
+    const notesBefore=audioEvents.length;playCue('start');assert.equal(audioEvents.length,notesBefore+4);
+    sound=false;playCue('win');assert.equal(audioEvents.length,notesBefore+4,'mute suppresses result cues');
+    stopCueSounds();assert.equal(cueVoices.size,0,'mute cancels scheduled notes');
+    sound=true;document.hidden=true;playCue('menu');assert.equal(audioEvents.length,notesBefore+4,'hidden tabs do not play cues');
+    document.hidden=false;playCue('lose');assert.equal(audioEvents.length,notesBefore+7);
+    for(let i=0;i<30;i++)playCue('menu');assert(cueVoices.size<=16,'rapid menu input keeps a bounded number of voices');
+    stopCueSounds();
   `,sandbox);
 });
