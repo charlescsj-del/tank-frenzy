@@ -2,9 +2,9 @@
 
 A playful, browser-based tank arena with chunky toy tanks, a sunny cartoon quarry, rounded menus and bold lettering. Choose Free-for-All or 2 vs 2 and invite your friends.
 
-Current release: **v1.1.1**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
+Current release: **v1.2.0**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
 
-See [SOUND_DESIGN.md](SOUND_DESIGN.md) for a proposed cartoon arcade audio direction; these proposed sounds are not part of the current release.
+See [SOUND_DESIGN.md](SOUND_DESIGN.md) for the approved cartoon arcade audio direction and implementation notes.
 
 ## Public Game
 
@@ -39,8 +39,8 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 - During touch play, the arena fills the available browser height. A single 44px top row shows the room, your name and health, and **Menu**. Open Menu for fullscreen, invite, leave, sound and view controls. A close camera follows your tank so tanks and nearby cover stay large. Choose **Full Map** for an overview and **Close View** to return; this changes only your view, not movement, aiming, or the shared map. Landscape gives you a wider view. Leaving the room restores the page.
 - Full Screen expands the arena on desktop and mobile. Where browser fullscreen is unavailable or rejected, it falls back to an expanded view inside the browser; browser bars may remain visible. Use Exit Full Screen to return. Landscape is recommended on phones.
 - W/A/S/D: move up/left/down/right along the unrotated map axes, including diagonal movement.
-- Audio: your own moving tank's engine and track sound, plus opponents' firing sounds. Your own firing sound is muted; impacts and ricochets remain audible.
-- Menu buttons and rule controls have a light click chime. Joining a match/new round, collecting a power, winning and losing have distinct short cues. Team results use your team's outcome. Sound starts after a user interaction; **Sound Off** also cancels queued cue notes. Hidden tabs do not play new cues. These sounds use the browser's built-in synthesizer, with no audio downloads.
+- Audio: your own moving tank's quiet engine and track sound, plus opponents' cannon, double-gun and machine-gun shots. Normal local firing stays muted; lasers, impacts and ricochets remain audible. Nearby combat is clearer, distant effects are quieter, and subtle stereo positioning works alongside mono phone playback.
+- The approved cartoon samples add layered explosions, metallic pings, electrical zaps and distinct Immortal/Restore/Speed pickup cues. Menu, match-start, victory and defeat sounds use the previewed samples; team results use your team's outcome. Sound starts after a user interaction. A single 170 KiB sound asset downloads and decodes once, with original synth effects as fallbacks while loading or if it fails. **Sound Off**, leaving and hiding the page cancel active effects. Playback is bounded to 12 sample voices; result cues take priority and briefly lower combat volume.
 - Shell range covers the full map diagonal, and shots into nearby cover ricochet from the barrel's last clear point.
 - Opposing shells destroy each other on contact with a spark and impact sound. You can shoot down incoming fire; your own shells pass through one another. Shell interceptions do not award kills or damage nearby tanks.
 - Mouse pointer: aim the turret independently of movement.

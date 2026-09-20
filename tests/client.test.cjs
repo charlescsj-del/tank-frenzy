@@ -39,5 +39,15 @@ test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
     document.hidden=false;playCue('lose');assert.equal(audioEvents.length,notesBefore+7);
     for(let i=0;i<30;i++)playCue('menu');assert(cueVoices.size<=16,'rapid menu input keeps a bounded number of voices');
     stopCueSounds();
+    const played=[];soundBank={play:(name,options)=>{played.push({name,options});return true;},stop(){},combat:{}};
+    joined=true;myId='me';tanks=[{id:'me',x:100,y:100},{id:'other',x:800,y:100,power:'double'}];
+    playDestroySound({x:100,y:100});assert.equal(played.at(-1).name,'explosion');
+    playCue('pickup','immortal');assert.equal(played.at(-1).name,'immortal');assert.equal(played.at(-1).options.channel,'cue');
+    playCue('pickup','restore');assert.equal(played.at(-1).name,'restore');
+    playShotSound({player:'other',slot:1,x:800,y:100});assert.equal(played.at(-1).name,'double');assert(played.at(-1).options.volume<.6);assert.equal(played.at(-1).options.pan,.55);
+    tanks[1].power='machine';playShotSound({player:'other',slot:1,x:800,y:100});assert.equal(played.at(-1).name,'machine-fire');
+    const count=played.length;playShotSound({player:'me',slot:0});assert.equal(played.length,count,'own normal fire stays muted with samples');
+    sound=false;playDestroySound({x:100,y:100});assert.equal(played.length,count);sound=true;
+    document.hidden=true;playCue('start');assert.equal(played.length,count);document.hidden=false;
   `,sandbox);
 });

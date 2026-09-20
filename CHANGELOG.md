@@ -2,6 +2,22 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.2.0
+
+### Audio
+
+- Added the approved cartoon sound samples: layered destruction, cannon pops, paired double-gun pops, machine-gun ticks, laser zaps, metallic ricochets, interception sparks and hull impacts.
+- Added the previewed menu, match-start, victory and defeat cues. Immortal, Restore and Speed have distinct pickup sounds; weapon pickups use their matching weapon sound.
+- Packed the approved sounds into one cached 170 KiB MP3 asset. Machine-gun fire uses one tick from the auditioned burst per real shot; the two events from a double shot trigger only one paired sound.
+- Added distance attenuation, subtle stereo positioning, small shot/ricochet pitch variation, and quieter combat/engine audio beneath result fanfares.
+- Limited sample playback to 12 simultaneous voices with priority for important cues and rate limits for noisy bursts. Original synth effects remain as bounded fallbacks while the audio loads or if loading fails.
+- Sound Off, leaving, and hiding the page stop active effects, including long explosions and queued synth notes. Loading a sound never replays an old event later.
+- Preserved muted normal local firing, the local engine sound and existing laser audibility.
+
+### Performance
+
+- Samples download and decode once per page session after audio is activated. All mixing runs in the browser. No gameplay snapshot fields, simulation timers or per-room server work were added.
+
 ## 1.1.1
 
 ### Fixed

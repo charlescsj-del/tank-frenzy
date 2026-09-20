@@ -1,12 +1,20 @@
 # Tank Frenzy sound direction
 
-Status: proposal for discussion, not implemented in v1.1.1.
+Status: approved after an audio audition; the selected sample set is implemented in v1.2.0.
+
+## Shipped implementation
+
+The game uses the actual approved sample waveforms, packed into `audio/cartoon-v1.mp3` with offsets in `sound-bank.js`. The pack is 170 KiB and decodes once after the first audio interaction. It includes the proposed explosion, menu, start, shots, laser, ricochet, interception, hit, Immortal, Restore, Speed, win and defeat sounds. Weapon pickups reuse the matching weapon sound. Machine-gun firing plays only the first tick of the approved burst for each actual shot.
+
+Browser playback has a 12-voice limit, priority for important cues, repeated-effect rate limits, subtle panning, distance attenuation and result-cue ducking. Mute cancels active samples and fallback synth effects. The engine remains synthesized locally. Original tones are a fallback during loading or if the asset fails; old events are never queued for later playback.
+
+The sections below preserve the design direction that informed the audition. Dedicated charge-up/ratchet pickup variations and a persistent in-game preview panel remain possible future refinements.
 
 ## Direction: playful cartoon arcade
 
 Use short, expressive sounds that suit the toy tanks. Favor chunky pops, metallic pings, sparkling power cues and small musical phrases. Make effects recognizable during a busy match without relying on loudness alone.
 
-The current client already synthesizes notes and filtered noise in the browser. Most effects use a single falling tone or a short sequence of triangle-wave notes. Pickups share one melody, and firing sounds differ mainly by player slot. The next pass can give each event its own character using the existing event stream.
+Before v1.2.0, the client synthesized notes and filtered noise in the browser. Most effects used a single falling tone or a short sequence of triangle-wave notes. Pickups shared one melody, and firing sounds differed mainly by player slot. The approved sample set gives each event its own character using the existing event stream.
 
 | Event | Proposed sound | Purpose |
 | --- | --- | --- |
@@ -38,12 +46,12 @@ The current client already synthesizes notes and filtered noise in the browser. 
 - Preserve the current muted local firing behavior initially. A soft optional own-shot sound can be considered separately.
 - Avoid a continuous Immortal jingle or constant power-up loops; a pickup cue is enough for the first pass.
 
-## Implementation scope
+## Original implementation proposal
 
 Start with distinct pickup cues, a richer destruction sound, laser sound and ricochet variations. Then refine menu/start/result sounds and positional mixing.
 
 Synthesize and mix audio locally using the browser's existing audio context. Reuse bounded noise buffers, route effects through a shared volume control, and track active voices so mute can cancel them all. These proposals use existing snapshots and events; they do not require extra server simulation or additional sound messages.
 
-## How to compare it
+## Audition workflow
 
 Create a small sound-preview panel before finalizing the audio changes, with buttons for each effect and an overall volume control. Compare old and proposed effects at similar perceived volume, then try a busy four-player match on phone speakers and headphones. Check that pickup/result cues remain clear, rapid fire is comfortable, and mute stops sounds immediately.

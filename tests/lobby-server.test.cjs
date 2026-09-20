@@ -26,8 +26,22 @@ function server(){
   const game=sandbox.module.exports.createGameServer();
   function join(room,mode,name='Player',token,settings){const socket=new Socket();game.wss.emit('connection',socket);socket.emit('message',JSON.stringify({type:'join',room,mode,name,token,settings}));return socket;}
   function list(){let body,headers={};game.server.emit('request',{url:'/rooms',method:'GET'},{setHeader(k,v){headers[k]=v;},end(raw){body=JSON.parse(raw);}});return {body,headers};}
-  return {game,join,list};
+  function read(url){return new Promise((resolve,reject)=>{
+    const {Writable}=require('node:stream'),chunks=[],headers={};let status=200;
+    const response=new Writable({write(chunk,encoding,done){chunks.push(Buffer.from(chunk));done();}});
+    response.setHeader=(key,value)=>{headers[key]=value;};response.writeHead=code=>{status=code;};
+    response.on('finish',()=>resolve({status,headers,body:Buffer.concat(chunks)}));response.on('error',reject);
+    game.server.emit('request',{url,method:'GET'},response);
+  });}
+  return {game,join,list,read};
 }
+
+test('approved audio is served with the right type/cache policy and unrelated files stay private',async()=>{
+  const s=server(),asset=await s.read('/audio/cartoon-v1.mp3');
+  assert.equal(asset.status,200);assert.equal(asset.headers['Content-Type'],'audio/mpeg');assert.match(asset.headers['Cache-Control'],/immutable/);assert(asset.body.length>100000);
+  const script=await s.read('/sound-bank.js');assert.equal(script.status,200);assert.match(script.headers['Content-Type'],/text\/javascript/);assert.equal(script.headers['Cache-Control'],'no-store');
+  assert.equal((await s.read('/audio/README.md')).status,404);assert.equal((await s.read('/audio/current.mp3')).status,404);
+});
 
 test('room directory starts empty and lists only public player details',()=>{
   const s=server();assert.deepEqual(s.list().body,{rooms:[]});
