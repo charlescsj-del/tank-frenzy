@@ -188,7 +188,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <symbol id="power-laser" viewBox="-16 -16 32 32"><path d="M-11 11 5-5M-11-5-8-2M4 10 7 13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="m6-15 3 6 6 3-6 3-3 6-3-6-6-3 6-3z" fill="currentColor"/></symbol>
 <symbol id="power-double" viewBox="-16 -16 32 32"><g fill="currentColor"><rect x="-11" y="-9" width="8" height="21" rx="3"/><rect x="3" y="-9" width="8" height="21" rx="3"/><path d="M-9-13h4v6h-4zM5-13h4v6H5z"/></g><path d="M-7-5v5M7-5v5" fill="none" stroke="#a279f5" stroke-width="3" stroke-linecap="round"/></symbol>
 <symbol id="power-speed" viewBox="-16 -16 32 32"><path d="M3-13-10 2h8l-2 11L11-4H3z" fill="currentColor"/></symbol>
-<symbol id="power-machine" viewBox="-16 -16 32 32"><g transform="rotate(-26)" fill="currentColor"><rect x="-12" y="-7" width="6" height="16" rx="3"/><rect x="-3" y="-7" width="6" height="16" rx="3"/><rect x="6" y="-7" width="6" height="16" rx="3"/><path d="M-10 12h2v3h-2zM-1 12h2v3h-2zM8 12h2v3H8z"/></g></symbol>
+<symbol id="power-machine" viewBox="-18 -18 36 36"><g transform="rotate(-26)" fill="currentColor"><rect x="-12" y="-7" width="6" height="16" rx="3"/><rect x="-3" y="-7" width="6" height="16" rx="3"/><rect x="6" y="-7" width="6" height="16" rx="3"/><path d="M-10 12h2v3h-2zM-1 12h2v3h-2zM8 12h2v3H8z"/></g></symbol>
 <symbol id="power-immortal" viewBox="-16 -16 32 32"><path d="m0-14 4.1 8.3 9.2 1.3-6.7 6.5 1.6 9.2L0 7l-8.2 4.3 1.6-9.2-6.7-6.5 9.2-1.3z" fill="#fff5a1"/></symbol>
 <symbol id="power-restore" viewBox="-16 -16 32 32"><path d="M0 12C-23-2-9-19 0-7 9-19 23-2 0 12" fill="#e94d5c"/></symbol>
 </defs></svg>
@@ -205,7 +205,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <canvas id="game" width="1120" height="610" tabindex="0" aria-label="Tank arena. Use W A S D to move, point the mouse to aim, and hold left click to fire."></canvas>
 <div class="stage-label"><b id="mapLabel">RANDOM MAP / NEW EACH MATCH</b><span>1600 x 1040 / 0.42 SECOND RELOAD</span></div>
 <div id="respawn" role="status" aria-live="polite"></div>
-<div id="powerStatus" role="img" aria-label="Active power-up" hidden><svg viewBox="-16 -16 32 32" aria-hidden="true"><use id="powerGlyph" href="#power-speed"/></svg><span id="powerTime" aria-hidden="true"></span><span class="power-track" aria-hidden="true"><span id="powerMeter"></span></span></div>
+<div id="powerStatus" role="img" aria-label="Active power-up" hidden><svg viewBox="0 0 32 32" aria-hidden="true"><use id="powerGlyph" href="#power-speed" x="0" y="0" width="32" height="32"/></svg><span id="powerTime" aria-hidden="true"></span><span class="power-track" aria-hidden="true"><span id="powerMeter"></span></span></div>
 <div id="thumbControls" class="thumb-controls" hidden>
 <div class="thumb-control"><div id="moveStick" class="thumb-pad" role="group" aria-label="Move: drag with your left thumb"><span></span></div>MOVE</div>
 <div class="thumb-control"><div id="aimStick" class="thumb-pad" role="group" aria-label="Aim and fire: drag with your right thumb, release to stop firing"><span></span></div>AIM + FIRE</div>
@@ -216,12 +216,12 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <img class="mode-banner" src="/mode-banner.webp" alt="Cartoon tanks facing off in a sunny quarry" width="2048" height="768">
 <div class="mode-choices" role="group" aria-label="Game mode"><button id="ffaMode" class="mode-card" type="button" aria-pressed="true"><span class="mode-emblem" aria-hidden="true">✦</span>FREE-FOR-ALL<small>Every tank for itself</small></button><button id="teamMode" class="mode-card" type="button" aria-pressed="false"><span class="mode-emblem" aria-hidden="true">★ ★</span>2 VS 2<small>Team up. No friendly fire.</small></button></div>
 <details class="power-guide"><summary>Power-up guide</summary><div class="power-legend">
-<span style="--power-color:#ef628b"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-laser"/></svg><b>Laser</b><small>5 damage · clears bullets</small></span>
-<span style="--power-color:#a279f5"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-double"/></svg><b>Double gun</b><small>Two shots</small></span>
-<span style="--power-color:#f2b931"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-speed"/></svg><b>Speed</b><small>Move faster</small></span>
-<span style="--power-color:#3fb5cc"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-machine"/></svg><b>Machine gun</b><small>Rapid fire</small></span>
-<span style="--power-color:#e8b933"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-immortal"/></svg><b>Immortal</b><small>No damage for 10s</small></span>
-<span style="--power-color:#ffe0e4"><svg viewBox="-16 -16 32 32" aria-hidden="true"><use href="#power-restore"/></svg><b>Restore</b><small>Full health instantly</small></span>
+<span style="--power-color:#ef628b"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-laser" x="0" y="0" width="32" height="32"/></svg><b>Laser</b><small>5 damage · clears bullets</small></span>
+<span style="--power-color:#a279f5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-double" x="0" y="0" width="32" height="32"/></svg><b>Double gun</b><small>Two shots</small></span>
+<span style="--power-color:#f2b931"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-speed" x="0" y="0" width="32" height="32"/></svg><b>Speed</b><small>Move faster</small></span>
+<span style="--power-color:#3fb5cc"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-machine" x="0" y="0" width="32" height="32"/></svg><b>Machine gun</b><small>Rapid fire</small></span>
+<span style="--power-color:#e8b933"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-immortal" x="0" y="0" width="32" height="32"/></svg><b>Immortal</b><small>No damage for 10s</small></span>
+<span style="--power-color:#ffe0e4"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-restore" x="0" y="0" width="32" height="32"/></svg><b>Restore</b><small>Full health instantly</small></span>
 </div></details>
 <div class="lobby-actions"><button id="refreshRooms" class="tool" type="button">REFRESH</button><button id="createRoom" class="tool" type="button">CREATE ROOM</button></div>
 <div id="roomListStatus" role="status"></div><div id="roomList" class="room-list"></div>

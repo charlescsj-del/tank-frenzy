@@ -2,7 +2,9 @@
 
 A playful, browser-based tank arena with chunky toy tanks, a sunny cartoon quarry, rounded menus and bold lettering. Choose Free-for-All or 2 vs 2 and invite your friends.
 
-Current release: **v1.1.0**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
+Current release: **v1.1.1**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
+
+See [SOUND_DESIGN.md](SOUND_DESIGN.md) for a proposed cartoon arcade audio direction; these proposed sounds are not part of the current release.
 
 ## Public Game
 

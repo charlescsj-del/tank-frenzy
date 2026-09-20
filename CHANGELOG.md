@@ -2,6 +2,17 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.1.1
+
+### Fixed
+
+- Corrected the SVG viewport for the active-power badge and all six power-guide icons. Symbols were offset into the bottom-right corner and clipped, leaving mostly a colored tile instead of the collected power's shape.
+- Explicitly sized each symbol instance so its full shape is centered within the badge. Preserved icon animation and the remaining-time display.
+
+### Documentation
+
+- Added `SOUND_DESIGN.md` to explore a cartoon arcade sound direction. Audio behavior is unchanged in this patch.
+
 ## 1.1.0
 
 ### Added
