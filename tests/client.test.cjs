@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
-test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
+test('local movement audio, local and opponent firing, and stop/mute behavior',()=>{
   const elements=new Map(),listeners={},audioEvents=[];
   const context=new Proxy({createLinearGradient:()=>({addColorStop(){}})},{get:(target,key)=>target[key]||(()=>{}),set:()=>true});
   const element=()=>({style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},addEventListener(){},setAttribute(){},replaceChildren(){},append(){},focus(){},getBoundingClientRect:()=>({width:1120,height:610}),getContext:()=>context});
@@ -22,8 +22,8 @@ test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
   vm.runInContext(`
     myId='me';joined=true;audioReady=true;lastSnapshot=100;
     const before=audioEvents.length;
-    playShotSound({player:'me',slot:0});assert.equal(audioEvents.length,before);
-    playShotSound({player:'opponent',slot:1});assert.equal(audioEvents.length,before+2);
+    playShotSound({player:'me',slot:0});assert.equal(audioEvents.length,before+2);
+    playShotSound({player:'opponent',slot:1});assert.equal(audioEvents.length,before+4);
     tanks=[{id:'me',slot:0,x:100,y:100,targetX:100,targetY:100,hp:5,a:0,aim:0,recoil:0,flash:0,track:0,name:'Me'},
       {id:'other',slot:1,x:900,y:100,targetX:920,targetY:100,hp:5,a:0,aim:0,recoil:0,flash:0,track:0,name:'Other'}];
     frame(16);assert.equal(engine,null,'opponent movement does not start local engine');
@@ -42,11 +42,14 @@ test('local movement audio, opponent-only firing, and stop/mute behavior',()=>{
     const played=[];soundBank={play:(name,options)=>{played.push({name,options});return true;},stop(){},combat:{}};
     joined=true;myId='me';tanks=[{id:'me',x:100,y:100},{id:'other',x:800,y:100,power:'double'}];
     playDestroySound({x:100,y:100});assert.equal(played.at(-1).name,'explosion');
-    playCue('pickup','immortal');assert.equal(played.at(-1).name,'immortal');assert.equal(played.at(-1).options.channel,'cue');
+    playCue('pickup','immortal');assert.equal(played.at(-1).name,'restore');assert.equal(played.at(-1).options.channel,'cue');
     playCue('pickup','restore');assert.equal(played.at(-1).name,'restore');
     playShotSound({player:'other',slot:1,x:800,y:100});assert.equal(played.at(-1).name,'double');assert(played.at(-1).options.volume<.6);assert.equal(played.at(-1).options.pan,.55);
-    tanks[1].power='machine';playShotSound({player:'other',slot:1,x:800,y:100});assert.equal(played.at(-1).name,'machine-fire');
-    const count=played.length;playShotSound({player:'me',slot:0});assert.equal(played.length,count,'own normal fire stays muted with samples');
+    tanks[1].power='machine';playShotSound({player:'other',slot:1,x:800,y:100});assert.equal(played.at(-1).name,'shot');
+    playShotSound({player:'me',slot:0});assert.equal(played.at(-1).name,'shot','own firing is audible');
+    playShotSound({player:'me',slot:0,power:'double'});assert.equal(played.at(-1).name,'double');
+    for(const power of FIELD.powers){playCue('pickup',power);assert.equal(played.at(-1).name,'restore');}
+    const count=played.length;
     sound=false;playDestroySound({x:100,y:100});assert.equal(played.length,count);sound=true;
     document.hidden=true;playCue('start');assert.equal(played.length,count);document.hidden=false;
   `,sandbox);

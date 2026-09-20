@@ -89,3 +89,13 @@ test('the creator sets rules and later joiners cannot overwrite them',()=>{
   const room=s.list().body.rooms[0];assert.deepEqual(room.settings,{mode:'teams',bouncing:false,powers:false});
   assert.deepEqual(room.players.map(p=>p.team),[0,1]);
 });
+
+test('start messages are server-authorized, transfer before start, and cannot restart a running room',()=>{
+  const s=server(),a=s.join('START','create','Alice'),b=s.join('START','join','Bob'),room=s.game.rooms.get('START');
+  assert.equal(s.list().body.rooms[0].phase,'waiting');
+  b.emit('message',JSON.stringify({type:'start',ownerId:a.messages[0].id}));assert.equal(room.phase,'waiting');
+  a.emit('message',JSON.stringify({type:'leave'}));assert.equal(room.ownerId,b.messages[0].id);
+  b.emit('message',JSON.stringify({type:'start'}));assert.equal(room.phase,'countdown');assert.equal(room.ownerId,null);
+  room.step(3);b.emit('message',JSON.stringify({type:'start'}));assert.equal(room.phase,'playing');
+  b.emit('message',JSON.stringify({type:'leave'}));assert.equal(s.game.rooms.has('START'),false);
+});

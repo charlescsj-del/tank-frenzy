@@ -9,14 +9,14 @@ const {Room}=require('./game-server.cjs');
 const {maxPlayers}=require('./shared.js');
 function createGameServer(){
   const rooms=new Map(),sessions=new Map();
-  const files={'/':['index.html','text/html'],'/index.html':['index.html','text/html'],'/client.js':['client.js','text/javascript'],'/shared.js':['shared.js','text/javascript'],'/sound-bank.js':['sound-bank.js','text/javascript'],'/audio/cartoon-v1.mp3':['audio/cartoon-v1.mp3','audio/mpeg'],'/mode-banner.webp':['mode-banner.webp','image/webp']};
+  const files={'/':['index.html','text/html'],'/index.html':['index.html','text/html'],'/client.js':['client.js','text/javascript'],'/shared.js':['shared.js','text/javascript'],'/sound-bank.js':['sound-bank.js','text/javascript'],'/music.js':['music.js','text/javascript'],'/audio/cartoon-v1.mp3':['audio/cartoon-v1.mp3','audio/mpeg'],'/mode-banner.webp':['mode-banner.webp','image/webp']};
   const server=http.createServer((req,res)=>{
     const url=new URL(req.url,'http://localhost');
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     if(req.method!=='GET'){res.writeHead(405);res.end();return;}
     if(url.pathname==='/rooms'){
       const available=[...rooms.values()].filter(room=>room.players.size>0).map(room=>({
-        code:room.code,capacity:maxPlayers,available:maxPlayers-room.players.size,settings:room.settings,
+        code:room.code,capacity:maxPlayers,available:maxPlayers-room.players.size,settings:room.settings,phase:room.phase,
         players:[...room.players.values()].map(({name,slot,connected,team})=>({name,slot,connected,team}))
       })).sort((a,b)=>a.code.localeCompare(b.code));
       res.setHeader('Content-Type','application/json');res.end(JSON.stringify({rooms:available}));return;
@@ -67,9 +67,11 @@ function createGameServer(){
         session.ws=ws;clearTimeout(joinTimeout);send(ws,{type:'welcome',id:session.player.id,token:session.token,slot:session.player.slot,room:code,seq:session.player.seq});send(ws,session.room.snapshot());return;
       }
       if(!session)return;
+      if(session.ws!==ws)return;
+      if(msg.type==='start')session.room.start(session.player);
       if(msg.type==='input')session.room.setInput(session.player,msg);
       if(msg.type==='ping')send(ws,{type:'pong',sent:msg.sent});
-      if(msg.type==='leave'){session.room.players.delete(session.player.id);sessions.delete(session.token);ws.close(1000,'Left room');}
+      if(msg.type==='leave'){session.room.remove(session.player);if(session.room.players.size===0)rooms.delete(session.room.code);sessions.delete(session.token);ws.close(1000,'Left room');}
     });
     ws.on('close',()=>{clearTimeout(joinTimeout);if(session&&session.ws===ws)session.room.disconnect(session.player);});
   });

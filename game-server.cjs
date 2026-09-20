@@ -22,7 +22,7 @@ function rayBox(x,y,dx,dy,w){
   return near;
 }
 class Room {
-  constructor(code,options={}){this.code=code;this.settings=Object.freeze({mode:options?.mode==='teams'?'teams':'ffa',bouncing:options?.bouncing!==false,powers:options?.powers!==false});this.ownerId=null;this.teamScores=[0,0];this.pickups=[];this.pickupId=0;this.nextPickup=6;this.map=generateMap();this.players=new Map();this.shells=[];this.events=[];this.time=0;this.eventId=0;this.shellId=0;this.winner=null;this.restartAt=0;}
+  constructor(code,options={}){this.code=code;this.settings=Object.freeze({mode:options?.mode==='teams'?'teams':'ffa',bouncing:options?.bouncing!==false,powers:options?.powers!==false});this.phase='waiting';this.countdownUntil=0;this.ownerId=null;this.teamScores=[0,0];this.pickups=[];this.pickupId=0;this.nextPickup=6;this.map=generateMap();this.players=new Map();this.shells=[];this.events=[];this.time=0;this.eventId=0;this.shellId=0;this.winner=null;this.restartAt=0;}
   emit(type,data){this.events.push({id:++this.eventId,type,...data});}
   add(name){
     if(this.players.size>=F.maxPlayers)return null;
@@ -30,8 +30,23 @@ class Room {
     const p={id:randomUUID(),slot,name:name||F.palette[slot].name,x:0,y:0,a:0,aim:0,hp:F.maxHealth,kills:0,deaths:0,cool:0,respawnAt:0,shieldUntil:0,connected:true,disconnectedAt:0,input:neutral(),lastInput:this.time,seq:-1,life:0};
     const teams=[0,1].map(team=>[...this.players.values()].filter(t=>t.team===team).length);
     p.team=this.settings.mode==='teams'?(teams[0]<=teams[1]?0:1):null;
-    this.ownerId??=p.id;
+    if(this.phase==='waiting')this.ownerId??=p.id;
     this.players.set(p.id,p);this.spawn(p);return p;
+  }
+  refreshOwner(){
+    if(this.phase!=='waiting'){this.ownerId=null;return;}
+    if(!this.players.get(this.ownerId)?.connected)this.ownerId=[...this.players.values()].find(p=>p.connected)?.id??null;
+  }
+  remove(p){this.players.delete(p.id);this.refreshOwner();}
+  start(p){
+    this.refreshOwner();
+    if(this.phase!=='waiting'||!p?.connected||p.id!==this.ownerId||!this.players.has(p.id))return false;
+    this.beginCountdown();return true;
+  }
+  beginCountdown(){
+    this.phase='countdown';this.ownerId=null;this.countdownUntil=this.time+3;
+    this.shells=[];this.pickups=[];this.nextPickup=this.countdownUntil+6;
+    for(const p of this.players.values())this.spawn(p);
   }
   spawn(p){
     p.power=null;p.powerUntil=0;
@@ -39,19 +54,21 @@ class Room {
     const choices=this.map.spawns.map((xy,i)=>({xy,score:others.length?Math.min(...others.map(t=>Math.hypot(t.x-xy[0],t.y-xy[1]))):i===p.slot?1:0})).sort((a,b)=>b.score-a.score);
     const free=choices.find(c=>!others.some(t=>Math.hypot(t.x-c.xy[0],t.y-c.xy[1])<55));
     if(!free){p.hp=0;p.respawnAt=this.time+.5;return;}
-    [p.x,p.y]=free.xy;p.hp=F.maxHealth;p.life++;p.respawnAt=0;p.cool=.3;p.shieldUntil=this.time+2;p.input=neutral();p.pendingShot=false;p.a=p.x<F.width/2?0:Math.PI;p.aim=p.a;
+    [p.x,p.y]=free.xy;p.hp=F.maxHealth;p.life++;p.respawnAt=0;p.cool=.3;p.shieldUntil=this.phase==='playing'?this.time+3:0;p.input=neutral();p.pendingShot=false;p.a=p.x<F.width/2?0:Math.PI;p.aim=p.a;
   }
   setInput(p,m){
     if(!Number.isSafeInteger(m.seq)||m.seq<=p.seq||!Number.isFinite(m.x)||!Number.isFinite(m.y)||!Number.isFinite(m.aimX)||!Number.isFinite(m.aimY)||typeof m.fire!=='boolean')return;
     p.seq=m.seq;p.lastInput=this.time;
+    if(this.phase!=='playing'){p.input=neutral();p.pendingShot=false;return;}
     if(m.fire&&!p.input.fire&&p.hp>0)p.pendingShot=true;
     p.input={x:clamp(m.x,-1,1),y:clamp(m.y,-1,1),aimX:clamp(m.aimX,-200,F.width+200),aimY:clamp(m.aimY,-200,F.height+200),fire:m.fire};
   }
-  disconnect(p){p.connected=false;p.disconnectedAt=this.time;p.input=neutral();p.pendingShot=false;}
+  disconnect(p){p.connected=false;p.disconnectedAt=this.time;p.input=neutral();p.pendingShot=false;this.refreshOwner();}
   blocked(x,y,p){return x<26||x>F.width-26||y<26||y>F.height-26||this.map.walls.some(w=>hitRect(x,y,26,w))||[...this.players.values()].some(t=>t!==p&&t.connected&&t.hp>0&&Math.hypot(x-t.x,y-t.y)<50);}
   friendly(a,b){return this.settings.mode==='teams'&&a.team!=null&&a.team===b.team;}
   invulnerable(p){return p.shieldUntil>this.time||(this.settings.powers&&p.power==='immortal'&&p.powerUntil>this.time);}
   damage(p,owner,amount=1){
+    if(this.phase!=='playing')return;
     const attacker=this.players.get(owner);
     if(p.hp<=0||this.invulnerable(p)||(attacker&&this.friendly(attacker,p)))return;
     p.hp=Math.max(0,p.hp-amount);const dead=p.hp===0;
@@ -98,11 +115,11 @@ class Room {
     if(target)this.damage(target,p.id,F.laserDamage);
   }
   fire(p){
-    if(p.cool>0||this.winner)return;
+    if(this.phase!=='playing'||p.cool>0||this.winner)return;
     const power=this.settings.powers&&p.powerUntil>this.time?p.power:null;
     const count=power==='double'?2:1;
     if(power!=='laser'&&(this.shells.length+count>F.maxShells||this.shells.filter(s=>s.owner===p.id).length+count>F.maxShellsPerPlayer))return;
-    p.cool=power==='machine'?.12:power==='laser'?.8:F.fireCooldown;p.shieldUntil=0;
+    p.cool=power==='machine'?.12:power==='laser'?.8:F.fireCooldown;
     if(power==='laser'){this.fireLaser(p);return;}
     for(const angle of power==='double'?[p.aim-.09,p.aim+.09]:[p.aim]){
     const dx=Math.cos(angle),dy=Math.sin(angle);let x=p.x,y=p.y;
@@ -113,15 +130,21 @@ class Room {
       if(nx<5||nx>F.width-5||ny<5||ny>F.height-5||this.map.walls.some(w=>hitRect(nx,ny,5,w)))break;
       x=nx;y=ny;
     }
-    this.emit('shot',{x,y,slot:p.slot,player:p.id});
+    this.emit('shot',{x,y,slot:p.slot,player:p.id,power});
     const life=Math.hypot(F.width,F.height)/F.shellSpeed+2;
     this.shells.push({id:++this.shellId,x,y,vx:dx*F.shellSpeed,vy:dy*F.shellSpeed,owner:p.id,team:p.team,slot:p.slot,life,bounces:0});
     }
   }
   step(dt){
     this.time+=dt;
-    for(const p of this.players.values())if(!p.connected&&this.time-p.disconnectedAt>15)this.players.delete(p.id);
-    if(this.winner){if(this.time>=this.restartAt){this.winner=null;this.shells=[];this.pickups=[];this.teamScores=[0,0];this.nextPickup=this.time+6;this.map=generateMap();for(const p of this.players.values()){p.kills=0;p.deaths=0;this.spawn(p);}this.emit('restart',{});}return;}
+    for(const p of this.players.values())if(!p.connected&&this.time-p.disconnectedAt>15)this.remove(p);
+    this.refreshOwner();
+    if(this.phase==='waiting')return;
+    if(this.phase==='countdown'){
+      if(this.time>=this.countdownUntil){this.phase='playing';for(const p of this.players.values()){p.input=neutral();p.pendingShot=false;p.lastInput=this.time;}this.emit('start',{});}
+      return;
+    }
+    if(this.winner){if(this.time>=this.restartAt){this.winner=null;this.teamScores=[0,0];this.map=generateMap();for(const p of this.players.values()){p.kills=0;p.deaths=0;}this.beginCountdown();this.emit('restart',{});}return;}
     this.pickups=this.pickups.filter(p=>p.expiresAt>this.time);
     if(this.settings.powers&&this.time>=this.nextPickup){this.spawnPickup();this.nextPickup=this.time+F.pickupInterval;}
     for(const p of this.players.values()){
@@ -188,6 +211,6 @@ class Room {
     }
     this.shells=this.shells.filter(s=>s.life>0);
   }
-  snapshot(){return {type:'state',room:this.code,settings:this.settings,ownerId:this.ownerId,teamScores:this.teamScores,pickups:this.pickups,map:this.map,time:this.time,winner:this.winner,restartIn:Math.max(0,this.restartAt-this.time),players:[...this.players.values()].map(({id,slot,name,x,y,a,aim,hp,kills,deaths,connected,respawnAt,shieldUntil,life,team,power,powerUntil})=>({id,slot,name,x,y,a,aim,hp,kills,deaths,connected,respawnIn:Math.max(0,respawnAt-this.time),shield:shieldUntil>this.time,life,team,power,powerRemaining:Math.max(0,powerUntil-this.time)})),shells:this.shells,events:this.events};}
+  snapshot(){return {type:'state',room:this.code,settings:this.settings,phase:this.phase,countdownIn:this.phase==='countdown'?Math.max(0,this.countdownUntil-this.time):0,ownerId:this.ownerId,teamScores:this.teamScores,pickups:this.pickups,map:this.map,time:this.time,winner:this.winner,restartIn:Math.max(0,this.restartAt-this.time),players:[...this.players.values()].map(({id,slot,name,x,y,a,aim,hp,kills,deaths,connected,respawnAt,shieldUntil,life,team,power,powerUntil})=>({id,slot,name,x,y,a,aim,hp,kills,deaths,connected,respawnIn:Math.max(0,respawnAt-this.time),shield:shieldUntil>this.time,life,team,power,powerRemaining:Math.max(0,powerUntil-this.time)})),shells:this.shells,events:this.events};}
 }
 module.exports={Room,hitRect};

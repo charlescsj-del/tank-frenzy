@@ -2,6 +2,23 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.3.0
+
+### Rooms and rounds
+
+- Added a waiting-room player list after creating/joining an unstarted room. The creator starts the first game; start control transfers to the next connected player if they leave or disconnect beforehand.
+- After the first start there is no owner. New rounds restart automatically, and rooms are removed when the last player leaves or disconnected reservations expire.
+- Added a large shared 3–2–1 countdown before every round, with movement, aiming, firing, damage and pickups frozen on the server until it ends. Countdown input cannot queue shots for later.
+- Mid-match joins and respawns now receive three seconds of protection that remains active while moving or firing. Spawn protection and ten-second Immortal both slowly fade the tank artwork in/out; reduced-motion mode uses steady translucency.
+
+### Audio and naming
+
+- Enabled local firing audio. Normal and machine-gun fire share the cannon sample; double cannon uses the paired-shot sound once per volley. All power-up collections use one shared chime.
+- Renamed Double Gun to Double Cannon in the interface and current documentation.
+- Added quiet original cartoon music for splash/waiting screens and battle, generated and looped locally without server processing or music downloads.
+- Added independent Music and Effects switches to the top menu and splash screen, with browser-saved preferences. Hidden pages stop both channels; music resumes if enabled when returning.
+- Music uses one looping source and two cached mono buffers. Existing sound-effect voice limits remain in place.
+
 ## 1.2.0
 
 ### Audio

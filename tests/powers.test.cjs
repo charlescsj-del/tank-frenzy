@@ -1,7 +1,9 @@
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {Room,hitRect}=require('../game-server.cjs');
+const {Room:WaitingRoom,hitRect}=require('../game-server.cjs');
+// Existing physics fixtures exercise an already running match. Lifecycle has separate tests.
+class Room extends WaitingRoom{constructor(...args){super(...args);this.phase='playing';}}
 const F=require('../shared.js');
 function arena(options){const r=new Room('POWER',options);r.map.walls=[];return r;}
 function power(r,p,type){p.power=type;p.powerUntil=r.time+10;p.cool=0;}

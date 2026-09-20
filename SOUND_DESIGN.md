@@ -1,14 +1,16 @@
 # Tank Frenzy sound direction
 
-Status: approved after an audio audition; the selected sample set is implemented in v1.2.0.
+Status: approved after an audio audition; the selected sample set shipped in v1.2.0; playback choices and music were updated in v1.3.0.
 
 ## Shipped implementation
 
-The game uses the actual approved sample waveforms, packed into `audio/cartoon-v1.mp3` with offsets in `sound-bank.js`. The pack is 170 KiB and decodes once after the first audio interaction. It includes the proposed explosion, menu, start, shots, laser, ricochet, interception, hit, Immortal, Restore, Speed, win and defeat sounds. Weapon pickups reuse the matching weapon sound. Machine-gun firing plays only the first tick of the approved burst for each actual shot.
+The game uses the actual approved sample waveforms, packed into `audio/cartoon-v1.mp3` with offsets in `sound-bank.js`. The pack is 170 KiB and decodes once after the first audio interaction. It includes the proposed explosion, menu, start, shots, laser, ricochet, interception, hit, Immortal, Restore, Speed, win and defeat sounds. In v1.3.0, every pickup uses the approved Restore chime. Normal and machine-gun shots use the same cannon sample, including local shots; double cannon uses the paired-pop sample. Unused audition clips remain in the immutable asset to preserve its versioned offsets.
 
 Browser playback has a 12-voice limit, priority for important cues, repeated-effect rate limits, subtle panning, distance attenuation and result-cue ducking. Mute cancels active samples and fallback synth effects. The engine remains synthesized locally. Original tones are a fallback during loading or if the asset fails; old events are never queued for later playback.
 
-The sections below preserve the design direction that informed the audition. Dedicated charge-up/ratchet pickup variations and a persistent in-game preview panel remain possible future refinements.
+Original splash/waiting and battle tunes in `music.js` are rendered once into two cached mono buffers on the device. One looping source at gain 0.10 keeps music beneath the effects mix. Music and effects have independent saved switches; hiding the page stops both. No server audio processing or music downloads are needed.
+
+The sections below preserve the earlier design proposal; the shipped behavior above supersedes its pickup and local-shot suggestions.
 
 ## Direction: playful cartoon arcade
 

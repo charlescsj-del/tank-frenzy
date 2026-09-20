@@ -129,6 +129,33 @@ test('start and outcome sounds play once per round, including teammate wins and 
   c.run("round.map.id=14;round.winner={id:'other'};updateMatchSounds(round)");assert.equal(c.run('cues.at(-1)'),'lose');
 });
 
+test('waiting screen lists players, restricts Start, and gives way to the countdown',()=>{
+  const c=client();c.run(`latest={room:'SQUAD',phase:'waiting',ownerId:'other',players:[{id:'me',name:'Me',connected:true,slot:0},{id:'other',name:'Friend',connected:true,slot:1}]};updateRoomPhase(latest)`);
+  assert.equal(c.elements.get('waitingRoom').hidden,false);assert.equal(c.elements.get('waitingPlayers').children.length,2);
+  assert.equal(c.elements.get('startGame').hidden,true);assert.equal(c.elements.get('thumbControls').hidden,true);
+  c.elements.get('startGame').events.click();assert.equal(c.sent.filter(m=>m.type==='start').length,0);
+  c.run("latest.ownerId='me';updateRoomPhase(latest)");assert.equal(c.elements.get('startGame').hidden,false);
+  c.elements.get('startGame').events.click();assert.equal(c.sent.filter(m=>m.type==='start').length,1);
+  c.run("latest.phase='countdown';latest.countdownIn=2.9;updateRoomPhase(latest)");
+  assert.equal(c.elements.get('waitingRoom').hidden,true);assert.equal(c.elements.get('countdown').hidden,false);assert.equal(c.elements.get('countdownNumber').textContent,'3');
+  const sent=c.sent.length;c.run('firing=true;sendInput()');assert.equal(c.sent.length,sent);
+  c.run("latest.countdownIn=.8;updateRoomPhase(latest)");assert.equal(c.elements.get('countdownNumber').textContent,'1');
+  c.run("latest.phase='playing';updateRoomPhase(latest)");assert.equal(c.elements.get('countdown').hidden,true);assert.equal(c.elements.get('thumbControls').hidden,false);
+});
+
+test('start cue waits for countdown completion and music/effects switches operate independently',()=>{
+  const c=client();c.run(`var cues=[];playCue=kind=>cues.push(kind);var state={map:{id:15},phase:'waiting',players:[]};updateMatchSounds(state);state.phase='countdown';updateMatchSounds(state)`);
+  assert.equal(c.run('cues.length'),0);c.run("state.phase='playing';updateMatchSounds(state);updateMatchSounds(state)");assert.equal(c.run('cues.join()'),'start');
+  c.run("var musicEvents=[];musicPlayer={play:mode=>musicEvents.push(mode),stop:()=>musicEvents.push('stop')};getAudio=()=>({});TankMusic=function(){};audioReady=true;joined=false;syncMusic()");
+  assert.equal(c.run('musicEvents.at(-1)'),'lobby');
+  c.elements.get('sound').events.click();assert.equal(c.run('sound'),false);assert.equal(c.run('music'),true);assert.equal(c.run('musicEvents.at(-1)'),'lobby');
+  c.elements.get('music').events.click();assert.equal(c.run('music'),false);assert.equal(c.run('musicEvents.at(-1)'),'stop');
+  c.elements.get('sound').events.click();assert.equal(c.run('sound'),true);assert.equal(c.run('music'),false);
+  c.run("joined=true;latest={phase:'playing'}");c.elements.get('music').events.click();assert.equal(c.run('musicEvents.at(-1)'),'battle');
+  c.run('document.hidden=true');c.documentEvents.visibilitychange();assert.equal(c.run('musicEvents.at(-1)'),'stop');
+  c.run('document.hidden=false');c.documentEvents.visibilitychange();assert.equal(c.run('musicEvents.at(-1)'),'battle');
+});
+
 test('plain URLs open the room browser while room links keep the prefilled join form',()=>{
   const plain=client();assert.equal(plain.elements.get('roomBrowser').hidden,false);assert.equal(plain.elements.get('joinFields').hidden,true);
   const linked=client(false,'http://localhost:8765/?room=quarry');

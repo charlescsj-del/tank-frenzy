@@ -181,6 +181,22 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 #versionBadge{display:none;position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:5;border:1px solid #b9c89b;border-radius:9px;padding:5px 9px;background:#fff9e9ed;color:#5f7551;font:800 11px var(--round-font);pointer-events:none}
 .in-lobby #versionBadge{display:block}.in-lobby.arena-expanded #versionBadge{display:none}
 .power-legend{grid-template-columns:repeat(3,1fr);row-gap:14px}
+
+/* Waiting room and audio controls share the existing compact top menu. */
+.room-actions{flex-wrap:wrap}
+.game.lobby-open .arena-header{display:block}
+.game.lobby-open .room-title,.game.lobby-open .scoreboard,.game.lobby-open #fullscreen,.game.lobby-open #copy,.game.lobby-open #latency{display:none}
+.waiting-panel{padding:24px 16px;background:radial-gradient(ellipse at top,#eef6cb,#c5e2a4);min-height:360px}
+.waiting-panel[hidden],.countdown[hidden]{display:none}
+.waiting-panel .dialog{width:min(520px,100%)}
+#waitingPlayers{list-style:none;padding:0;text-align:left;display:grid;gap:10px}
+#waitingPlayers li{padding:13px 16px;border:2px solid #cfdbb7;border-left:8px solid var(--tank);border-radius:12px;background:#fffdf1;font-weight:800;overflow-wrap:anywhere}
+.game.waiting-room canvas,.game.waiting-room .stage-label,.game.waiting-room .scoreboard{display:none}
+.game.waiting-room .stage{overflow:auto}
+.countdown{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:none;background:#35513c22;color:#fff5b0;text-shadow:0 5px #3b5d47,3px 0 #3b5d47,-3px 0 #3b5d47}
+.countdown span{font-weight:1000;font-size:clamp(18px,4vw,32px);letter-spacing:3px}
+.countdown strong{font:1000 clamp(100px,22vh,190px)/1.15 var(--round-font)}
+@media(pointer:coarse) and (hover:none){.game.mobile-active .room-actions{width:min(340px,calc(100vw - 16px))}.game.waiting-room .waiting-panel{min-height:100%;padding:18px 12px}.game.waiting-room .arena-header{grid-template-columns:minmax(0,1fr) 44px}.game.waiting-room .arena-menu-button{grid-column:2}}
 </style>
 </head>
 <body>
@@ -197,11 +213,13 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <section class="intro"><div><p class="eyebrow">YOUR TANK. YOUR BROWSER. ONE BATTLEFIELD.</p><h1>Small tanks.<br><span>Big rivalries.</span></h1></div><p>Bring your friends into the field.<br><span id="introControls">Move with WASD. Aim with your mouse. Click to fire.</span></p></section>
 <section id="arena" class="game" aria-label="Network tank arena">
 <div id="arenaHeader" class="arena-header">
-<div class="room-strip"><span class="room-title">ROOM <b id="roomCode">QUARRY</b> &nbsp; / &nbsp; <span id="roomCount">0 / 4 PLAYERS</span></span><button id="arenaMenu" class="tool arena-menu-button" aria-expanded="false" aria-controls="arenaActions" aria-label="Arena menu">MENU</button><div id="arenaActions" class="room-actions"><button id="fullscreen" class="tool" aria-pressed="false">FULL SCREEN</button><button id="copy" class="tool">COPY INVITE</button><button id="leave" class="tool" hidden>LEAVE ROOM</button><button id="viewMode" class="tool" aria-pressed="false" hidden>FULL MAP</button><button id="sound" class="tool" aria-pressed="true">SOUND ON</button><span class="tool" id="latency">OFFLINE</span></div></div>
+<div class="room-strip"><span class="room-title">ROOM <b id="roomCode">QUARRY</b> &nbsp; / &nbsp; <span id="roomCount">0 / 4 PLAYERS</span></span><button id="arenaMenu" class="tool arena-menu-button" aria-expanded="false" aria-controls="arenaActions" aria-label="Arena menu">MENU</button><div id="arenaActions" class="room-actions"><button id="fullscreen" class="tool" aria-pressed="false">FULL SCREEN</button><button id="copy" class="tool">COPY INVITE</button><button id="leave" class="tool" hidden>LEAVE ROOM</button><button id="viewMode" class="tool" aria-pressed="false" hidden>FULL MAP</button><button id="sound" class="tool" aria-pressed="true">EFFECTS ON</button><button id="music" class="tool" aria-pressed="true" aria-label="Background music">MUSIC ON</button><span class="tool" id="latency">OFFLINE</span></div></div>
 <p id="viewNote" role="status"></p>
 <div id="roster" class="scoreboard"><span class="room-empty">Join the room to claim your tank.</span></div>
 </div>
 <div class="stage">
+<section id="waitingRoom" class="waiting-panel" aria-labelledby="waitingTitle" hidden><div class="dialog"><p class="eyebrow">GATHER YOUR SQUAD</p><h2 id="waitingTitle">Waiting room</h2><ul id="waitingPlayers" aria-label="Players in this room" aria-live="polite"></ul><p id="waitingMessage" role="status"></p><button id="startGame" class="primary" type="button" hidden>START GAME</button><p class="hint">Use Copy Invite in the top menu to invite friends.</p></div></section>
+<div id="countdown" class="countdown" role="status" aria-live="polite" hidden><span>GET READY</span><strong id="countdownNumber">3</strong></div>
 <canvas id="game" width="1120" height="610" tabindex="0" aria-label="Tank arena. Use W A S D to move, point the mouse to aim, and hold left click to fire."></canvas>
 <div class="stage-label"><b id="mapLabel">RANDOM MAP / NEW EACH MATCH</b><span>1600 x 1040 / 0.42 SECOND RELOAD</span></div>
 <div id="respawn" role="status" aria-live="polite"></div>
@@ -217,7 +235,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <div class="mode-choices" role="group" aria-label="Game mode"><button id="ffaMode" class="mode-card" type="button" aria-pressed="true"><span class="mode-emblem" aria-hidden="true">✦</span>FREE-FOR-ALL<small>Every tank for itself</small></button><button id="teamMode" class="mode-card" type="button" aria-pressed="false"><span class="mode-emblem" aria-hidden="true">★ ★</span>2 VS 2<small>Team up. No friendly fire.</small></button></div>
 <details class="power-guide"><summary>Power-up guide</summary><div class="power-legend">
 <span style="--power-color:#ef628b"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-laser" x="0" y="0" width="32" height="32"/></svg><b>Laser</b><small>5 damage · clears bullets</small></span>
-<span style="--power-color:#a279f5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-double" x="0" y="0" width="32" height="32"/></svg><b>Double gun</b><small>Two shots</small></span>
+<span style="--power-color:#a279f5"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-double" x="0" y="0" width="32" height="32"/></svg><b>Double cannon</b><small>Two shots</small></span>
 <span style="--power-color:#f2b931"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-speed" x="0" y="0" width="32" height="32"/></svg><b>Speed</b><small>Move faster</small></span>
 <span style="--power-color:#3fb5cc"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-machine" x="0" y="0" width="32" height="32"/></svg><b>Machine gun</b><small>Rapid fire</small></span>
 <span style="--power-color:#e8b933"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#power-immortal" x="0" y="0" width="32" height="32"/></svg><b>Immortal</b><small>No damage for 10s</small></span>
@@ -239,7 +257,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <div id="mobileHelp" class="mobile-help" hidden><strong>Two thumbs. Full control.</strong><p>Left thumb to move. Right thumb to aim and fire. Release either control to stop.</p><p>The close view follows your tank. Open Menu for Full Map, sound, fullscreen, invite and leave controls. Turn your phone sideways for a wider battlefield.</p></div>
 <div id="desktopHelp">
 <div class="control-card"><div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><kbd class="fire">MOVE / STRAFE</kbd></div><div><div class="key-label">EVERY PLAYER</div><h3>Drive your own way.</h3><p>WASD moves in screen directions.<br>Combine keys to move diagonally.</p></div></div>
-<div class="control-card"><div><div class="key-label">INDEPENDENT TURRET</div><h3>Point. Click. Boom.</h3><p>The barrel follows your mouse. Hold left click to fire every 0.42 seconds. Straight map axes match WASD movement. Hear your engine and opponents' shots.</p></div></div>
+<div class="control-card"><div><div class="key-label">INDEPENDENT TURRET</div><h3>Point. Click. Boom.</h3><p>The barrel follows your mouse. Hold left click to fire every 0.42 seconds. Straight map axes match WASD movement. Hear your engine and every cannon shot.</p></div></div>
 </div>
 <div class="control-card"><div><div class="key-label">BRING YOUR FRIENDS</div><h3>Same room. Different screens.</h3><p id="networkLinks" class="network-detail">Open this address in another browser and join the same room. The host keeps this server running.</p></div></div>
 </section>
@@ -248,6 +266,7 @@ button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visi
 <small id="versionBadge" aria-label="Game version"></small>
 <script src="/shared.js"></script>
 <script src="/sound-bank.js"></script>
+<script src="/music.js"></script>
 <script src="/client.js"></script>
 </body>
 </html>

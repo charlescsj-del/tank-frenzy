@@ -3,7 +3,9 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {once}=require('node:events');
 const WebSocket=require('ws');
-const {Room}=require('../game-server.cjs');
+const {Room:WaitingRoom}=require('../game-server.cjs');
+// Existing physics fixtures exercise an already running match. Lifecycle has separate tests.
+class Room extends WaitingRoom{constructor(...args){super(...args);this.phase='playing';}}
 const {createGameServer}=require('../server.cjs');
 const F=require('../shared.js');
 const {generateMap}=require('../map-generator.cjs');
@@ -97,7 +99,7 @@ test('real network: independent sessions, shared state, isolation, validation, r
   async function client(room,name,token){
     const ws=new WebSocket(base.replace('http:','ws:')+'/ws');clients.push(ws);const queue=[],waiters=[];
     ws.on('message',raw=>{const data=JSON.parse(raw);queue.push(data);for(const w of [...waiters])if(w.predicate(data)){waiters.splice(waiters.indexOf(w),1);clearTimeout(w.timer);w.resolve(data);}});
-    function wait(predicate){const existing=queue.find(predicate);if(existing)return Promise.resolve(existing);return new Promise((resolve,reject)=>{const w={predicate,resolve,timer:setTimeout(()=>reject(Error('Timed out waiting for message')),3000)};waiters.push(w);});}
+    function wait(predicate){const existing=queue.find(predicate);if(existing)return Promise.resolve(existing);return new Promise((resolve,reject)=>{const w={predicate,resolve,timer:setTimeout(()=>reject(Error('Timed out waiting for message')),5000)};waiters.push(w);});}
     await once(ws,'open');ws.send(JSON.stringify({type:'join',room,name,token}));return {ws,wait,queue};
   }
   const a=await client('ARENA','Alice'),aw=await a.wait(m=>m.type==='welcome');
@@ -105,6 +107,7 @@ test('real network: independent sessions, shared state, isolation, validation, r
   assert.notEqual(aw.id,bw.id);assert.notEqual(aw.slot,bw.slot);
   const aState=await a.wait(m=>m.type==='state'&&m.players.length===2),bState=await b.wait(m=>m.type==='state'&&m.players.length===2);assert.deepEqual(aState.map,bState.map,'players receive the same generated map');
   const c=await client('OTHER','Charlie');await c.wait(m=>m.type==='welcome');const isolated=await c.wait(m=>m.type==='state');assert.equal(isolated.players.length,1);
+  a.ws.send(JSON.stringify({type:'start'}));await a.wait(m=>m.type==='state'&&m.phase==='playing');
   const initial=game.rooms.get('ARENA').players.get(aw.id),startX=initial.x;
   a.ws.send(JSON.stringify({type:'input',seq:1,x:1,y:0,aimX:500,aimY:330,fire:true}));
   const shared=await b.wait(m=>m.type==='state'&&m.players.some(p=>p.id===aw.id&&p.x>startX+5));assert(shared.players.find(p=>p.id===bw.id));
