@@ -2,6 +2,11 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.3.2
+
+- Reduced laser damage from 5 to 4 per hit. A full-health, unprotected tank now survives two laser hits with 2 health and is destroyed by the third.
+- Updated the power-up guide, current rules and damage regression tests. Screen shake and other laser behavior are unchanged.
+
 ## 1.3.1
 
 ### Combat

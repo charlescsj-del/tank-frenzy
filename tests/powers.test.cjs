@@ -111,10 +111,11 @@ test('50-percent higher limits allow 36 per player and 144 per room with atomic 
 test('laser damages enemies once, stops at cover, and ignores teammates',()=>{
   const r=arena({mode:'teams'}),a=r.add('A'),b=r.add('B'),c=r.add('C');
   a.x=100;a.y=300;a.aim=0;b.x=500;b.y=300;c.x=250;c.y=300;b.shieldUntil=c.shieldUntil=0;
-  power(r,a,'laser');r.fire(a);assert.equal(b.hp,5);assert.equal(c.hp,10);assert.equal(r.shells.length,0);
+  assert.equal(F.laserDamage,4);
+  power(r,a,'laser');r.fire(a);assert.equal(b.hp,6);assert.equal(c.hp,10);assert.equal(r.shells.length,0);
   assert(r.events.some(e=>e.type==='laser'&&e.endX<500));
-  r.map.walls=[{x:350,y:200,w:30,h:200}];a.cool=0;r.fire(a);assert.equal(b.hp,5);assert.equal(r.events.at(-1).endX,350);
-  r.map.walls=[];b.shieldUntil=10;a.cool=0;r.fire(a);assert.equal(b.hp,5);
+  r.map.walls=[{x:350,y:200,w:30,h:200}];a.cool=0;r.fire(a);assert.equal(b.hp,6);assert.equal(r.events.at(-1).endX,350);
+  r.map.walls=[];b.shieldUntil=10;a.cool=0;r.fire(a);assert.equal(b.hp,6);
 });
 
 test('Immortal absorbs shells and blocks laser damage for ten seconds, even while firing',()=>{
@@ -158,9 +159,10 @@ test('laser clears all enemy bullets on its path but stops at the first enemy ta
   r.shells=[shot(1,260,500,enemy),shot(2,350,500,behind),shot(3,430,510,enemy),shot(4,400,512,enemy),shot(5,650,500,enemy),shot(6,300,500,a),shot(7,320,500,friend),shot(8,90,500,enemy)];
   power(r,a,'laser');r.fire(a);
   assert.deepEqual(r.shells.map(s=>s.id),[4,5,6,7,8]);assert.equal(r.events.filter(e=>e.type==='laser-clear').length,3);
-  assert.equal(enemy.hp,5);assert.equal(friend.hp,10);assert.equal(behind.hp,10);assert.equal(a.kills,0);
+  assert.equal(enemy.hp,6);assert.equal(friend.hp,10);assert.equal(behind.hp,10);assert.equal(a.kills,0);
   const beam=r.events.find(e=>e.type==='laser');assert.equal(beam.x,140);assert.equal(beam.y,500);assert.equal(beam.endX,574);
-  a.cool=0;r.fire(a);assert.equal(enemy.hp,0);assert.equal(a.kills,1);assert.equal(behind.hp,10,'killing the first tank still stops that beam');
+  a.cool=0;r.fire(a);assert.equal(enemy.hp,2);assert.equal(a.kills,0);assert.equal(enemy.deaths,0);assert.equal(behind.hp,10);
+  a.cool=0;r.fire(a);assert.equal(enemy.hp,0);assert.equal(a.kills,1);assert.equal(enemy.deaths,1);assert.equal(behind.hp,10,'killing the first tank still stops that beam');
 });
 
 test('laser does not clear bullets behind cover or pierce spawn shields',()=>{

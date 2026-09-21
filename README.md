@@ -2,7 +2,7 @@
 
 A playful, browser-based tank arena with chunky toy tanks, a sunny cartoon quarry, rounded menus and bold lettering. Choose Free-for-All or 2 vs 2 and invite your friends.
 
-Current release: **v1.3.1**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
+Current release: **v1.3.2**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
 
 See [SOUND_DESIGN.md](SOUND_DESIGN.md) for the approved cartoon arcade audio direction and implementation notes.
 
@@ -36,7 +36,7 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 - The first player creating a room chooses its mode, **Bullet bouncing** and **Super powers**; both switches default to on. Rules stay fixed for that room. With bouncing off, shells disappear on walls and arena edges. Laser beams stop at cover regardless of the bounce setting.
 - Random pickups grant **10 seconds** of laser, double cannon, speed (+60% movement), machine gun, or **Immortal**. A new timed pickup replaces your current power; death and a new match clear it. **Immortal** uses a star icon and prevents all incoming shell/laser damage, while you can still move and fire. Enemy shells are absorbed; enemy lasers stop at your tank. **Restore** uses a red heart and immediately refills health to 10, preserving any active timed power and its remaining duration. It does not create a timed health effect or overheal.
 - Bobbing icon tokens mark pickups. The HUD uses a matching animated icon, seconds remaining and a shrinking timer bar; the room browser's **Power-up guide** explains the symbols. Immortal has orbiting stars, and Restore briefly displays a heart when collected. Reduced-motion settings disable decorative movement. Pickups start after six seconds, then at most one appears every twelve seconds; they expire after twenty seconds, with at most two on the field.
-- **Laser** deals 5 damage, destroys all enemy shells intersecting the beam before its impact point, and stops at the first enemy tank, wall or arena boundary. It cannot shoot through a tank, even when that tank has a spawn shield or Immortal. In 2 vs 2, shells and lasers pass through teammates and their bullets. The beam starts at the visible muzzle; nearby cover clips it so a barrel pressed against a wall cannot shoot through the wall.
+- **Laser** deals 4 damage, destroys all enemy shells intersecting the beam before its impact point, and stops at the first enemy tank, wall or arena boundary. It cannot shoot through a tank, even when that tank has a spawn shield or Immortal. In 2 vs 2, shells and lasers pass through teammates and their bullets. The beam starts at the visible muzzle; nearby cover clips it so a barrel pressed against a wall cannot shoot through the wall.
 - **Leave Room** asks for confirmation; cancelling keeps you in the match. Browsers may also show their standard warning when closing or refreshing during play (mobile browser behavior varies). Tank destruction has a louder bass impact; Effects Off still mutes it.
 
 - Phones and tablets with a primary touch input show two thumb controls after joining: drag the left stick to move and the right stick to aim and fire. Release to stop. Mouse/keyboard browsers keep the desktop controls, even in a narrow window.
@@ -53,7 +53,7 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 - Opposing shells destroy each other on contact with a spark and impact sound. You can shoot down incoming fire; your own shells pass through one another. Shell interceptions do not award kills or damage nearby tanks.
 - Mouse pointer: aim the turret independently of movement.
 - Left click: fire. Hold to keep firing, with a 0.42-second cooldown between shots.
-- Tanks have **10 health**: ten normal shells or two unprotected laser hits destroy a full-health tank. Respawn takes three seconds and restores all 10 health. Five compact health pips each represent two health; half pips show odd health values without widening the mobile header.
+- Tanks have **10 health**: ten normal shells or three unprotected laser hits destroy a full-health tank. Respawn takes three seconds and restores all 10 health. Five compact health pips each represent two health; half pips show odd health values without widening the mobile header.
 - Mid-match joins and respawns have three seconds of protection, even while moving and firing. Protected tanks slowly fade in/out; the ten-second Immortal power uses the same effect. Reduced-motion mode uses steady translucency.
 - First to ten kills wins; after the ten-second results screen, the next match starts automatically with another three-second countdown.
 - Leaving the tab stops your controls, but other players keep playing.
