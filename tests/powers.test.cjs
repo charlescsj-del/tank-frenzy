@@ -59,14 +59,53 @@ test('speed moves 60 percent faster only while active',()=>{
   p.powerUntil=r.time;const end=p.x;move();assert(Math.abs(p.x-end-base)<1e-8);
 });
 
-test('double gun emits two shells; machine gun shoots faster within hard limits',()=>{
+test('double cannon emits parallel shells; machine gun shoots faster within hard limits',()=>{
   const r=arena(),p=r.add('P');power(r,p,'double');r.fire(p);
-  assert.equal(r.shells.length,2);assert.notEqual(r.shells[0].vy,r.shells[1].vy);
+  assert.equal(r.shells.length,2);assert.equal(r.shells[0].vx,r.shells[1].vx);assert.equal(r.shells[0].vy,r.shells[1].vy);
   r.shells=[];power(r,p,'machine');r.fire(p);assert.equal(p.cool,.12);
   for(let i=0;i<200;i++){p.cool=0;r.fire(p);}assert.equal(r.shells.length,F.maxShellsPerPlayer);
   const others=Array.from({length:3},()=>r.add('Other'));
   for(const other of others){power(r,other,'machine');for(let i=0;i<200;i++){other.cool=0;r.fire(other);}}
   assert.equal(r.shells.length,F.maxShells);
+});
+
+test('double cannon barrels stay parallel and equally spaced in every aim direction',()=>{
+  for(const aim of [0,Math.PI/2,Math.PI,-Math.PI/2,.63,-2.2]){
+    const r=arena(),p=r.add('P');p.x=800;p.y=520;p.aim=aim;power(r,p,'double');r.fire(p);
+    const [a,b]=r.shells,dx=Math.cos(aim),dy=Math.sin(aim);
+    for(const [shell,offset] of [[a,-F.doubleBarrelOffset],[b,F.doubleBarrelOffset]]){
+      assert(Math.abs((shell.x-p.x)*dx+(shell.y-p.y)*dy-38)<1e-8);
+      assert(Math.abs(-(shell.x-p.x)*dy+(shell.y-p.y)*dx-offset)<1e-8);
+      assert(Math.abs(shell.vx-dx*F.shellSpeed)<1e-8);assert(Math.abs(shell.vy-dy*F.shellSpeed)<1e-8);
+    }
+    const gap={x:b.x-a.x,y:b.y-a.y};r.step(.25);
+    assert.equal(r.shells.length,2);assert(Math.abs(b.x-a.x-gap.x)<1e-8);assert(Math.abs(b.y-a.y-gap.y)<1e-8);
+    assert(Math.abs(Math.hypot(b.x-a.x,b.y-a.y)-F.doubleBarrelOffset*2)<1e-8);
+  }
+});
+
+test('parallel barrels independently clip cover and still ricochet at every boundary',()=>{
+  const r=arena(),p=r.add('P');p.x=500;p.y=500;p.aim=0;power(r,p,'double');
+  const wall={x:530,y:501,w:40,h:100};r.map.walls=[wall];r.fire(p);
+  const [clear,blocked]=r.shells;assert.equal(clear.x,538);assert(blocked.x<530);
+  assert.equal(clear.vx,blocked.vx);assert.equal(clear.vy,blocked.vy);
+  assert(r.shells.every(s=>!hitRect(s.x,s.y,5,wall)));r.step(1/120);
+  assert(clear.vx>0);assert(blocked.vx<0,'only the obstructed barrel ricochets');
+  for(const [x,y,aim] of [[26,520,Math.PI],[1574,520,0],[800,26,-Math.PI/2],[800,1014,Math.PI/2]]){
+    const edge=arena(),tank=edge.add('P');Object.assign(tank,{x,y,aim});power(edge,tank,'double');edge.fire(tank);
+    assert.equal(edge.shells.length,2);edge.step(.05);assert.equal(edge.shells.length,2);
+    assert(edge.shells.every(s=>s.bounces===1&&s.vx*Math.cos(aim)+s.vy*Math.sin(aim)<0));
+  }
+});
+
+test('50-percent higher limits allow 36 per player and 144 per room with atomic double volleys',()=>{
+  assert.equal(F.maxShellsPerPlayer,36);assert.equal(F.maxShells,144);
+  const r=arena(),players=Array.from({length:4},()=>r.add('P'));
+  for(const p of players){power(r,p,'machine');for(let i=0;i<36;i++){p.cool=0;r.fire(p);}assert.equal(r.shells.filter(s=>s.owner===p.id).length,36);}
+  assert.equal(r.shells.length,144);const p=players[0];p.cool=0;r.fire(p);assert.equal(r.shells.length,144);
+  r.shells.shift();power(r,p,'double');r.fire(p);assert.equal(r.shells.length,143,'one free slot cannot split a volley');assert.equal(p.cool,0);
+  r.shells.shift();r.fire(p);assert.equal(r.shells.length,144);assert.equal(p.cool,F.fireCooldown);
+  const shots=r.events.filter(e=>e.type==='shot'&&e.player===p.id);assert.equal(shots.at(-1).power,'double');
 });
 
 test('laser damages enemies once, stops at cover, and ignores teammates',()=>{

@@ -121,12 +121,14 @@ class Room {
     if(power!=='laser'&&(this.shells.length+count>F.maxShells||this.shells.filter(s=>s.owner===p.id).length+count>F.maxShellsPerPlayer))return;
     p.cool=power==='machine'?.12:power==='laser'?.8:F.fireCooldown;
     if(power==='laser'){this.fireLaser(p);return;}
-    for(const angle of power==='double'?[p.aim-.09,p.aim+.09]:[p.aim]){
-    const dx=Math.cos(angle),dy=Math.sin(angle);let x=p.x,y=p.y;
+    const dx=Math.cos(p.aim),dy=Math.sin(p.aim);
+    for(const offset of power==='double'?[-F.doubleBarrelOffset,F.doubleBarrelOffset]:[0]){
+    // Separate barrel origins, identical velocity: a parallel double volley.
+    const originX=p.x-dy*offset,originY=p.y+dx*offset;let x=originX,y=originY;
     // If the barrel intersects cover, start at its last clear point. The normal
     // collision step then produces a ricochet instead of deleting the shot.
     for(let d=1;d<=38;d++){
-      const nx=p.x+dx*d,ny=p.y+dy*d;
+      const nx=originX+dx*d,ny=originY+dy*d;
       if(nx<5||nx>F.width-5||ny<5||ny>F.height-5||this.map.walls.some(w=>hitRect(nx,ny,5,w)))break;
       x=nx;y=ny;
     }

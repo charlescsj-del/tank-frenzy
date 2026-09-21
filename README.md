@@ -2,7 +2,7 @@
 
 A playful, browser-based tank arena with chunky toy tanks, a sunny cartoon quarry, rounded menus and bold lettering. Choose Free-for-All or 2 vs 2 and invite your friends.
 
-Current release: **v1.3.0**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
+Current release: **v1.3.1**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
 
 See [SOUND_DESIGN.md](SOUND_DESIGN.md) for the approved cartoon arcade audio direction and implementation notes.
 
@@ -47,6 +47,8 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 - The approved cartoon samples add explosions, pings, zaps, menu, start, victory and defeat cues. The 170 KiB sound asset downloads and decodes once, with bounded synth fallbacks while loading. Effects are limited to 12 sample voices, with priority for result cues.
 - Quiet original cartoon music plays on the splash/waiting screen and a livelier variation plays during battle. **Music** and **Effects** switches in the top menu operate independently and remember preferences on that browser when storage is available. Music stays lower than effects. Audio starts after the first tap or keypress; hidden pages stop music and effects, and music resumes on return if enabled. Leaving returns to splash music.
 - Music is composed into two reusable mono buffers on the player's device, then played with a single looping source. There are no music downloads, server music timers, audio streams or added game-simulation work. At most about 2.8 MiB of decoded music is cached in browser memory.
+- **Double cannon** fires two side-by-side shells in the same direction, aligned with its two barrels. Each barrel separately respects nearby cover.
+- Each player can have up to **36 active shells**, with **144 per room** (50% more than before). Reaching either limit pauses new shots until room becomes available. Double cannon needs two free slots per volley. Bouncing shots stay active longer; normal and double-cannon reload remains 0.42 seconds, machine gun 0.12 seconds.
 - Shell range covers the full map diagonal, and shots into nearby cover ricochet from the barrel's last clear point.
 - Opposing shells destroy each other on contact with a spark and impact sound. You can shoot down incoming fire; your own shells pass through one another. Shell interceptions do not award kills or damage nearby tanks.
 - Mouse pointer: aim the turret independently of movement.
@@ -63,7 +65,7 @@ The server owns movement, collision, firing cooldowns, health, scoring, and resp
 
 Run `npm test` for simulation and real WebSocket integration checks.
 
-Server work is bounded: at most 96 active shells per room / 24 per player, two pickups, and four players. Machine gun cooldown is 0.12 seconds; laser traces cover and tanks, then checks at most 96 shells per shot (0.8-second cooldown). Immortal adds a damage guard; Restore assigns maximum health once when collected. Neither adds timers or background jobs. Beam animation and particles are drawn only in the browser. The menu artwork is cached separately and is never sent in game snapshots. These limits keep the additions modest for small rooms; actual hosting capacity depends on concurrent rooms and the server plan.
+Server work is bounded: at most 144 active shells per room / 36 per player, two pickups, and four players. Machine gun cooldown is 0.12 seconds; laser traces cover and tanks, then checks at most 144 shells per shot (0.8-second cooldown). Immortal adds a damage guard; Restore assigns maximum health once when collected. Neither adds timers or background jobs. Beam animation and particles are drawn only in the browser. The menu artwork is cached separately and is never sent in game snapshots. These limits keep the additions modest for small rooms; actual hosting capacity depends on concurrent rooms and the server plan.
 
 Rendering, icon/fade animation, countdown display and audio playback run in each browser. Waiting/countdown phases and start authorization use the existing server tick and snapshot; no extra simulation timers are added. Waiting rooms skip combat simulation. The Start Game command is checked against the connected starter on the server. The tank collision shapes, aiming and compact 44px touch header are unchanged.
 

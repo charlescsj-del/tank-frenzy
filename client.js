@@ -618,7 +618,7 @@ function drawTank(t){
   const aim=laser?laser.aim:canAim&&t.id===myId&&touchAim?Math.atan2(touchAim.y,touchAim.x):canAim&&t.id===myId&&pointer.active?Math.atan2(pointer.y-t.y,pointer.x-t.x):t.aim;
   const barrelEnd=laser?laser.muzzleDistance:FIELD.barrelLength-t.recoil;
   const turret=project(t.x,t.y,FIELD.turretHeight);ctx.save();ctx.translate(turret.x,turret.y);ctx.scale(boardScale,boardScale);ctx.rotate(aim);
-  for(const y of t.power==='double'?[-6,6]:[0]){
+  for(const y of t.power==='double'?[-FIELD.doubleBarrelOffset,FIELD.doubleBarrelOffset]:[0]){
     roundedRect(ctx,8,y-4,Math.max(1,barrelEnd-9),8,3,t.power==='laser'?'#ff829e':tint(color,.85),ink,2.5);
     roundedRect(ctx,barrelEnd-7,y-6,7,12,3,ink);roundedRect(ctx,barrelEnd-3,y-3,3,6,1,'#a9c2b5');
   }

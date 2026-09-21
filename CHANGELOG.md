@@ -2,6 +2,14 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.3.1
+
+### Combat
+
+- Increased active-shell limits by 50%: 24 → 36 per player and 96 → 144 per room. This reduces cap-related firing pauses with bouncing enabled; reload cooldowns and shell lifetimes are unchanged.
+- Double cannon now fires two parallel shells from separate barrel origins instead of a spreading volley. Both barrels share the same heading and independently stop spawning forward when obstructed by cover.
+- Shared barrel spacing between simulation and tank rendering; updated the power-up guide and current rules.
+
 ## 1.3.0
 
 ### Rooms and rounds
