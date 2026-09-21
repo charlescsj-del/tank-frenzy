@@ -119,6 +119,28 @@ test('laser starts at the rendered muzzle despite movement and newer touch aim',
   assert.equal(c.run('geometry.start.x'),826);assert.equal(c.run('geometry.end.x'),826,'nearby cover clips both muzzle and beam');
 });
 
+test('one centerline for every weapon starts at the muzzle and follows every aim direction',()=>{
+  const c=client();c.run('walls=[]');
+  for(const power of [null,'double','machine','laser'])for(const aim of [0,Math.PI/2,Math.PI,-Math.PI/2,.63]){
+    const {start,end}=JSON.parse(c.run(`JSON.stringify(aimGuideSegment({x:800,y:520,power:${JSON.stringify(power)}},${aim},35))`));
+    const dx=Math.cos(aim),dy=Math.sin(aim);
+    assert(Math.abs((start.x-800)*dx+(start.y-520)*dy-35)<1e-8);
+    assert(Math.abs(-(start.x-800)*dy+(start.y-520)*dx)<1e-8);
+    assert(Math.abs((end.x-start.x)*dy-(end.y-start.y)*dx)<1e-8);
+    assert((end.x-start.x)*dx+(end.y-start.y)*dy>0);
+    assert(end.x>=-1e-8&&end.x<=1600+1e-8&&end.y>=-1e-8&&end.y<=1040+1e-8);
+  }
+});
+
+test('aim guides stop at cover, clip obstructed muzzles and never draw for opponents or frozen play',()=>{
+  const c=client();c.run('walls=[{x:850,y:450,w:30,h:200}];var guide=aimGuideSegment({x:800,y:520},0)');
+  assert.equal(c.run('guide.start.x'),840);assert.equal(c.run('guide.end.x'),845);
+  c.run("guide=aimGuideSegment({x:800,y:520,power:'laser'},0)");assert.equal(c.run('guide.end.x'),850);
+  c.run('guide=aimGuideSegment({x:824,y:520},0)');assert.equal(c.run('guide.start.x'),845);assert.equal(c.run('guide.end.x'),845);
+  // The stub canvas deliberately has no drawing methods: these paths must return before drawing.
+  c.run("drawAimGuide({id:'other',hp:10},0,40);drawAimGuide({id:'me',hp:0},0,40);latest={phase:'waiting'};drawAimGuide({id:'me',hp:10},0,40);latest={phase:'countdown'};drawAimGuide({id:'me',hp:10},0,40);latest={winner:{}};drawAimGuide({id:'me',hp:10},0,40);latest=null;joined=false;drawAimGuide({id:'me',hp:10},0,40)");
+});
+
 test('start and outcome sounds play once per round, including teammate wins and losses',()=>{
   const c=client();
   c.run(`var cues=[];playCue=kind=>cues.push(kind);var round={map:{id:11},players:[{id:'me',team:0}],settings:{mode:'teams'},winner:null};updateMatchSounds(round);updateMatchSounds(round)`);

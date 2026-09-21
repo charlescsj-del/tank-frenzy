@@ -42,6 +42,31 @@ test('pickups stay bounded, spawn clear of cover, expire and honor disabled powe
   const off=arena({powers:false});off.spawnPickup();off.step(30);assert.equal(off.pickups.length,0);
 });
 
+test('pickups collect equally from above, below, sides and diagonals with a forgiving radius',()=>{
+  assert.equal(F.pickupRadius,60);
+  for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2,Math.PI/4,3*Math.PI/4,5*Math.PI/4,7*Math.PI/4]){
+    const r=arena(),p=r.add('Collector');r.nextPickup=Infinity;
+    p.x=800+Math.cos(angle)*59;p.y=520+Math.sin(angle)*59;
+    r.pickups=[{id:1,type:'speed',x:800,y:520,expiresAt:30}];r.step(1/120);
+    assert.equal(p.power,'speed','approach angle '+angle);assert.equal(r.pickups.length,0);
+    assert.equal(r.events.filter(e=>e.type==='pickup').length,1);
+  }
+  const r=arena(),p=r.add('Boundary');r.nextPickup=Infinity;p.x=860.1;p.y=520;
+  r.pickups=[{id:1,type:'laser',x:800,y:520,expiresAt:30}];r.step(1/120);assert.equal(r.pickups.length,1);
+  p.x=860;r.step(1/120);assert.equal(p.power,'laser');assert.equal(r.pickups.length,0);
+});
+
+test('larger pickup area does not collect through cover or skip during fast movement',()=>{
+  const r=arena(),p=r.add('Blocked');r.nextPickup=Infinity;p.x=772;p.y=520;
+  r.map.walls=[{x:799,y:480,w:2,h:80}];r.pickups=[{id:1,type:'restore',x:828,y:520,expiresAt:30}];p.hp=5;
+  r.step(1/120);assert.equal(p.hp,5);assert.equal(r.pickups.length,1,'nearby pickup behind a wall remains');
+  r.map.walls=[];r.step(1/120);assert.equal(p.hp,10);assert.equal(r.pickups.length,0);
+  const fast=arena(),driver=fast.add('Fast');fast.nextPickup=Infinity;driver.x=800;driver.y=430;power(fast,driver,'speed');
+  fast.pickups=[{id:1,type:'laser',x:800,y:520,expiresAt:30}];
+  for(let i=0;i<20;i++){fast.setInput(driver,{seq:i,x:0,y:1,aimX:800,aimY:700,fire:false});fast.step(1/120);}
+  assert.equal(driver.power,'laser');assert.equal(fast.events.filter(e=>e.type==='pickup').length,1);
+});
+
 test('pickup grants one timed power; replacement, expiry and death clear it correctly',()=>{
   const r=arena(),p=r.add('P');r.nextPickup=Infinity;
   for(const type of ['speed','laser']){

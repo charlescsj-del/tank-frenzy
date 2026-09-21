@@ -560,7 +560,8 @@ function drawWall(w){
 function drawShell(s){const color=shellColors[s.slot];if(s.trail.length){ctx.beginPath();s.trail.forEach((t,i)=>{const p=project(t.x,t.y,22);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)});ctx.strokeStyle=color.trail;ctx.lineWidth=4;ctx.stroke();}const p=project(s.x,s.y,22);ctx.shadowColor=color.glow;ctx.shadowBlur=12;ctx.fillStyle=color.body;ctx.strokeStyle=color.rim;ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;}
 function drawPickups(){
   for(const [i,drop] of pickups.entries()){
-    const phase=reducedMotion?0:last/450+i*2,bob=reducedMotion?0:Math.sin(phase)*2,p=project(drop.x,drop.y,28);
+    // Center the token on its actual ground position, not an elevated projection.
+    const phase=reducedMotion?0:last/450+i*2,bob=reducedMotion?0:Math.sin(phase)*2,p=project(drop.x,drop.y);
     shadow(drop.x,drop.y,22,14,.16);
     ctx.save();ctx.translate(p.x,p.y+bob);ctx.rotate(reducedMotion?0:Math.sin(phase)*.07);
     ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.fillStyle='#fff9d788';ctx.fill();
@@ -568,6 +569,35 @@ function drawPickups(){
     drawPowerIcon(ctx,drop.type,0,-1,23);ctx.restore();
     star(ctx,p.x+21,p.y-15+bob,3+(reducedMotion?0:Math.sin(phase)*1.3),'#fff9d8');
   }
+}
+function aimGuideSegment(t,aim,barrelEnd=FIELD.barrelLength){
+  const dx=Math.cos(aim),dy=Math.sin(aim),radius=t.power==='laser'?0:5;
+  // One centerline for every weapon. Double cannon shells straddle this line.
+  const x=t.x,y=t.y;
+  let distance=Math.hypot(W,H);
+  if(dx>1e-9)distance=Math.min(distance,(W-radius-x)/dx);else if(dx< -1e-9)distance=Math.min(distance,(radius-x)/dx);
+  if(dy>1e-9)distance=Math.min(distance,(H-radius-y)/dy);else if(dy< -1e-9)distance=Math.min(distance,(radius-y)/dy);
+  // Ray against expanded cover: ordinary shells have a five-unit collision radius.
+  for(const wall of walls){
+    let near=0,far=distance;
+    for(const [p,d,min,max] of [[x,dx,wall.x-radius,wall.x+wall.w+radius],[y,dy,wall.y-radius,wall.y+wall.h+radius]]){
+      if(Math.abs(d)<1e-9){if(p<min||p>max){far=-1;break;}continue;}
+      const a=(min-p)/d,b=(max-p)/d;near=Math.max(near,Math.min(a,b));far=Math.min(far,Math.max(a,b));
+    }
+    if(near<=far)distance=Math.min(distance,near);
+  }
+  distance=Math.max(0,distance);
+  const muzzle=Math.min(Math.max(0,barrelEnd),distance);
+  return {start:{x:x+dx*muzzle,y:y+dy*muzzle},end:{x:x+dx*distance,y:y+dy*distance}};
+}
+function drawAimGuide(t,aim,barrelEnd){
+  if(!joined||t.id!==myId||t.hp<=0||latest?.winner||latest?.phase==='waiting'||latest?.phase==='countdown')return;
+  const zoom=Math.max(.01,scale);
+  ctx.save();ctx.globalAlpha=.6;ctx.setLineDash([6/zoom,5/zoom]);ctx.lineCap='round';
+  const {start,end}=aimGuideSegment(t,aim,barrelEnd);
+  const points=[[start.x,start.y,FIELD.turretHeight],[end.x,end.y,FIELD.turretHeight]];
+  line3(points,'#294a42',2.5/zoom);line3(points,'#fff9ce',1/zoom);
+  ctx.restore();
 }
 function laserGeometry(beam){
   const shooter=tanks.find(t=>t.id===beam.player&&t.life===beam.tankLife&&t.hp>0);
@@ -617,6 +647,7 @@ function drawTank(t){
   const canAim=latest?.phase!=='waiting'&&latest?.phase!=='countdown';
   const aim=laser?laser.aim:canAim&&t.id===myId&&touchAim?Math.atan2(touchAim.y,touchAim.x):canAim&&t.id===myId&&pointer.active?Math.atan2(pointer.y-t.y,pointer.x-t.x):t.aim;
   const barrelEnd=laser?laser.muzzleDistance:FIELD.barrelLength-t.recoil;
+  drawAimGuide(t,aim,barrelEnd);
   const turret=project(t.x,t.y,FIELD.turretHeight);ctx.save();ctx.translate(turret.x,turret.y);ctx.scale(boardScale,boardScale);ctx.rotate(aim);
   for(const y of t.power==='double'?[-FIELD.doubleBarrelOffset,FIELD.doubleBarrelOffset]:[0]){
     roundedRect(ctx,8,y-4,Math.max(1,barrelEnd-9),8,3,t.power==='laser'?'#ff829e':tint(color,.85),ink,2.5);

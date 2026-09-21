@@ -161,7 +161,8 @@ class Room {
       const speed=this.settings.powers&&p.power==='speed'?272:170;
       if(length){dx=dx/length*speed*dt;dy=dy/length*speed*dt;p.a=Math.atan2(dy,dx);if(!this.blocked(p.x+dx,p.y,p))p.x+=dx;if(!this.blocked(p.x,p.y+dy,p))p.y+=dy;}
       if(this.settings.powers){
-        const index=this.pickups.findIndex(drop=>Math.hypot(drop.x-p.x,drop.y-p.y)<40);
+        const index=this.pickups.findIndex(drop=>Math.hypot(drop.x-p.x,drop.y-p.y)<=F.pickupRadius&&
+          !this.map.walls.some(w=>rayBox(p.x,p.y,drop.x-p.x,drop.y-p.y,w)!==null));
         if(index>=0){
           const [drop]=this.pickups.splice(index,1);
           if(drop.type==='restore')p.hp=F.maxHealth;

@@ -52,5 +52,8 @@ test('local movement audio, local and opponent firing, and stop/mute behavior',(
     const count=played.length;
     sound=false;playDestroySound({x:100,y:100});assert.equal(played.length,count);sound=true;
     document.hidden=true;playCue('start');assert.equal(played.length,count);document.hidden=false;
+    const originalProject=project,projected=[];project=(x,y,z=0)=>{projected.push({x,y,z});return originalProject(x,y,z);};
+    pickups=[{x:800,y:520,type:'immortal'}];drawPickups();
+    assert(projected.length>0);assert(projected.every(p=>p.z===0),'pickup art and its shadow use the real ground center');project=originalProject;
   `,sandbox);
 });

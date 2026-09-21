@@ -2,7 +2,7 @@
 
 A playful, browser-based tank arena with chunky toy tanks, a sunny cartoon quarry, rounded menus and bold lettering. Choose Free-for-All or 2 vs 2 and invite your friends.
 
-Current release: **v1.3.2**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
+Current release: **v1.4.0**, also shown in the bottom-right corner of the main room browser. See [CHANGELOG.md](CHANGELOG.md) for release notes. Keep the version in `shared.js`, `package.json`, and `package-lock.json` synchronized when releasing changes.
 
 See [SOUND_DESIGN.md](SOUND_DESIGN.md) for the approved cartoon arcade audio direction and implementation notes.
 
@@ -45,8 +45,10 @@ Maps are 1600 by 1040 world units (about 2.5 times the previous area). Each room
 - W/A/S/D: move up/left/down/right along the unrotated map axes, including diagonal movement.
 - Audio: hear your own and opponents' shots. Normal and machine-gun fire share the same cannon sound (machine gun repeats it faster and slightly quieter). **Double cannon** plays paired pops. All collected powers use the same warm chime. Nearby combat is clearer, with subtle stereo positioning that also works on mono phone speakers.
 - The approved cartoon samples add explosions, pings, zaps, menu, start, victory and defeat cues. The 170 KiB sound asset downloads and decodes once, with bounded synth fallbacks while loading. Effects are limited to 12 sample voices, with priority for result cues.
-- Quiet original cartoon music plays on the splash/waiting screen and a livelier variation plays during battle. **Music** and **Effects** switches in the top menu operate independently and remember preferences on that browser when storage is available. Music stays lower than effects. Audio starts after the first tap or keypress; hidden pages stop music and effects, and music resumes on return if enabled. Leaving returns to splash music.
-- Music is composed into two reusable mono buffers on the player's device, then played with a single looping source. There are no music downloads, server music timers, audio streams or added game-simulation work. At most about 2.8 MiB of decoded music is cached in browser memory.
+- Original 16-bar arcade battle music combines drums, pulsing bass, sustained chords and a brass-style melody with phrase-ending fills. The battle arrangement is 128 BPM; splash/waiting music is a calmer 112 BPM. **Music** and **Effects** switches in the top menu operate independently and remember preferences on that browser when storage is available. Music stays lower than effects. Audio starts after the first tap or keypress; hidden pages stop music and effects, and music resumes on return if enabled. Leaving returns to splash music.
+- Music is composed into two reusable mono buffers on the player's device, then played with a single looping source. There are no music downloads, server music timers, audio streams or added game-simulation work. About 5.4 MiB of decoded music is cached in browser memory after both tracks have played.
+- Pickup icons are centered on their ground coordinates. A forgiving **60-world-unit collection radius** works equally from above, below and the sides; a wall between the tank and pickup blocks collection. Cosmetic bobbing does not move the actual collection area.
+- A single dashed **aiming centerline** extends from your muzzle toward the first wall or map edge. It follows mouse or thumb-stick aiming, is visible only to you and uses no additional network traffic. It shows initial direction, not ricochets or predicted moving-tank hits. Double cannon's parallel shells straddle this centerline.
 - **Double cannon** fires two side-by-side shells in the same direction, aligned with its two barrels. Each barrel separately respects nearby cover.
 - Each player can have up to **36 active shells**, with **144 per room** (50% more than before). Reaching either limit pauses new shots until room becomes available. Double cannon needs two free slots per volley. Bouncing shots stay active longer; normal and double-cannon reload remains 0.42 seconds, machine gun 0.12 seconds.
 - Shell range covers the full map diagonal, and shots into nearby cover ricochet from the barrel's last clear point.

@@ -2,6 +2,21 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.4.0
+
+### Pickups and aiming
+
+- Aligned pickup artwork with its actual ground position instead of projecting it above the collection center.
+- Increased collection radius from 40 to 60 world units for easier approaches from every direction. Nearby pickups cannot be collected through walls.
+- Added one local-only dashed aiming centerline from the muzzle for every weapon. Double cannon shells travel parallel on either side. The guide stops at cover or the map edge; it does not predict ricochets or moving-tank collisions.
+- Kept the guide hidden during waiting, countdowns, death and results. No aiming messages or server simulation were added.
+
+### Music
+
+- Replaced the simple music loop with an original 16-bar arcade battle arrangement: drums, pulsing bass, sustained chords, brass-style melody and phrase-ending fills.
+- Battle music plays at 128 BPM; the splash/waiting arrangement is a calmer 112 BPM. Both remain below sound-effect volume, with independent saved music/effects switches.
+- Music still renders once per track locally, then uses one looping source. Two cached mono buffers total about 5.4 MiB; no music downloads or server audio processing are required.
+
 ## 1.3.2
 
 - Reduced laser damage from 5 to 4 per hit. A full-health, unprotected tank now survives two laser hits with 2 health and is destroyed by the third.

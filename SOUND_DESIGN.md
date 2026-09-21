@@ -1,6 +1,6 @@
 # Tank Frenzy sound direction
 
-Status: approved after an audio audition; the selected sample set shipped in v1.2.0; playback choices and music were updated in v1.3.0.
+Status: approved effects shipped in v1.2.0, playback choices were updated in v1.3.0, and a more energetic original battle score shipped in v1.4.0.
 
 ## Shipped implementation
 
@@ -8,7 +8,9 @@ The game uses the actual approved sample waveforms, packed into `audio/cartoon-v
 
 Browser playback has a 12-voice limit, priority for important cues, repeated-effect rate limits, subtle panning, distance attenuation and result-cue ducking. Mute cancels active samples and fallback synth effects. The engine remains synthesized locally. Original tones are a fallback during loading or if the asset fails; old events are never queued for later playback.
 
-Original splash/waiting and battle tunes in `music.js` are rendered once into two cached mono buffers on the device. One looping source at gain 0.10 keeps music beneath the effects mix. Music and effects have independent saved switches; hiding the page stops both. No server audio processing or music downloads are needed.
+The original 16-bar score in `music.js` uses a D-minor battle theme over D minor / B-flat / F / C, with kick, snare, hi-hat, pulsing bass, sustained chords, brass-style melody and short drum fills. Battle tempo is 128 BPM; the splash/waiting arrangement is a calmer, sparser 112 BPM. Four changing phrases give each loop a beginning, development and turnaround.
+
+Both arrangements render once into cached mono buffers on the device (about 5.4 MiB together). One looping source at gain 0.10 keeps music beneath the effects mix. Peaks remain bounded and a short edge taper prevents loop clicks. Music and effects have independent saved switches; hiding the page stops both. No server audio processing or music downloads are needed.
 
 The sections below preserve the earlier design proposal; the shipped behavior above supersedes its pickup and local-shot suggestions.
 
