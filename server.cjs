@@ -10,6 +10,7 @@ const {maxPlayers}=require('./shared.js');
 function createGameServer(){
   const rooms=new Map(),sessions=new Map();
   const files={'/':['index.html','text/html'],'/index.html':['index.html','text/html'],'/client.js':['client.js','text/javascript'],'/shared.js':['shared.js','text/javascript'],'/sound-bank.js':['sound-bank.js','text/javascript'],'/music.js':['music.js','text/javascript'],'/audio/cartoon-v1.mp3':['audio/cartoon-v1.mp3','audio/mpeg'],'/mode-banner.webp':['mode-banner.webp','image/webp']};
+  for(const name of ['iron-advance','overdrive','steel-pressure'])files[`/audio/music-${name}-v1.mp3`]=[`audio/music-${name}-v1.mp3`,'audio/mpeg'];
   const server=http.createServer((req,res)=>{
     const url=new URL(req.url,'http://localhost');
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
@@ -28,7 +29,7 @@ function createGameServer(){
     }
     const file=files[url.pathname];if(!file){res.writeHead(404);res.end('Not found');return;}
     if(url.pathname==='/mode-banner.webp')res.setHeader('Cache-Control','public, max-age=86400');
-    if(url.pathname==='/audio/cartoon-v1.mp3')res.setHeader('Cache-Control','public, max-age=31536000, immutable');
+    if(file[1]==='audio/mpeg')res.setHeader('Cache-Control','public, max-age=31536000, immutable');
     res.setHeader('Content-Type',file[1]+(file[1].startsWith('text/')?'; charset=utf-8':''));fs.createReadStream(path.join(__dirname,file[0])).pipe(res);
   });
   const wss=new WebSocketServer({noServer:true,maxPayload:2048});

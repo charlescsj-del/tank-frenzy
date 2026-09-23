@@ -2,6 +2,14 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.5.0
+
+- Replaced procedural background music with the exact three approved MP3 recordings.
+- B — Overdrive plays before battle: splash, room waiting and 3–2–1 countdown.
+- A — Iron Advance or C — Steel Pressure is randomly selected locally for each battle. Consecutive battles may repeat; toggling music or returning to a hidden tab keeps the same round's choice.
+- Preserved independent Music/Effects controls, quieter music and first-interaction audio unlock. Playback stops immediately on mute or tab hiding, including while downloads are pending.
+- Music downloads and decodes on demand, caches up to three tracks and uses one looping source. Static MP3 delivery adds no game-simulation work. Approved sound effects are unchanged.
+
 ## 1.4.0
 
 ### Pickups and aiming
