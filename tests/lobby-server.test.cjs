@@ -46,6 +46,12 @@ test('approved audio is served with the right type/cache policy and unrelated fi
     assert.deepEqual(music.body,fs.readFileSync(require('node:path').join(__dirname,'..',url)));
     assert(music.body.length>500000&&music.body.length<800000);
   }
+  for(const url of new Set(Object.values(require('../sound-bank.js').approvedAssets))){
+    const effect=await s.read(url);
+    assert.equal(effect.status,200);assert.equal(effect.headers['Content-Type'],'audio/mpeg');
+    assert.match(effect.headers['Cache-Control'],/immutable/);
+    assert.deepEqual(effect.body,fs.readFileSync(require('node:path').join(__dirname,'..',url)));
+  }
   const script=await s.read('/sound-bank.js');assert.equal(script.status,200);assert.match(script.headers['Content-Type'],/text\/javascript/);assert.equal(script.headers['Cache-Control'],'no-store');
   assert.equal((await s.read('/audio/README.md')).status,404);assert.equal((await s.read('/audio/current.mp3')).status,404);
 });

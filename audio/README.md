@@ -8,6 +8,19 @@ Included clips: menu, start, cannon, double gun, machine-gun burst, laser, ricoc
 
 The server serves only explicitly allowed MP3 paths, with immutable caching. If the encoded pack changes, create a new asset filename and update the clip manifest and server allowlist together to avoid old cached audio using new offsets.
 
+## Approved battlefield effects (v1.6.0)
+
+The user chose four original MP3s from the playable effects audition. The bytes below are identical to those auditioned; none of the older cues need re-encoding:
+
+| File | Approved choice | Played for |
+| --- | --- | --- |
+| `effects-fire-a-v1.mp3` | Cannon A | Normal and machine-gun fire |
+| `effects-ricochet-c-v1.mp3` | Ricochet C | Bouncing shells |
+| `effects-pickup-a-v1.mp3` | Power-up A | Every collected pickup |
+| `effects-explosion-c-v1.mp3` | Destruction C | Tank destruction |
+
+These mono 44.1 kHz / 128 kbps files total 45,731 bytes. The original asset continues to supply double cannon, menu, countdown, laser, intercept, hit, win and loss. `sound-bank.js` downloads each distinct file once and falls back to its previous cue if an approved file fails to load. The game still limits simultaneous sample voices to 12; no additional sound messages are sent to the game server. Any changed MP3 requires a new filename because assets use immutable caching.
+
 ## Approved battle music (v1)
 
 These are the exact original stereo 44.1 kHz / 192 kbps MP3 audition recordings approved by the user, with no third-party samples:

@@ -2,6 +2,12 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.6.0
+
+- Installed the user's chosen effect auditions without resynthesizing them: Cannon A for normal and machine-gun fire, Ricochet C for shell bounces, Power-up A for all pickups, and Destruction C for tank explosions.
+- Kept double cannon's paired shot and all other cues from the original sound pack. Four small versioned MP3s decode on the client and retain the existing voice cap, spatial attenuation, mute and cue priority.
+- If one approved MP3 cannot load, its original game cue remains available. Audio adds no game-server simulation work.
+
 ## 1.5.0
 
 - Replaced procedural background music with the exact three approved MP3 recordings.
