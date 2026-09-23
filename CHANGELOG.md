@@ -2,6 +2,12 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.7.0
+
+- Raised background music gain from 0.10 to 0.30, leaving effects levels and independent Music/Effects switches unchanged.
+- Looped the existing approved songs at their 12-bar phrase boundaries, omitting the silent lead-in and fading tail. The next A/C battle selection now preloads during the 3–2–1 countdown to reduce the transition gap.
+- Added three rising, individually timed countdown ticks and a distinct new battle-start recording. Each cue plays once per number/round; late joiners hear only the remaining numbers. Both sounds use the existing bounded effects playback and mute controls.
+
 ## 1.6.0
 
 - Installed the user's chosen effect auditions without resynthesizing them: Cannon A for normal and machine-gun fire, Ricochet C for shell bounces, Power-up A for all pickups, and Destruction C for tank explosions.
