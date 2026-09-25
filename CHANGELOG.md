@@ -2,6 +2,12 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.8.0
+
+- Replaced the small bottom-of-field victory text with a large animated, accessible winner card centered over the arena. It also shows the local player's outcome, the live rematch tally, and a countdown; reduced-motion users see a static card.
+- Removed automatic next rounds. Each connected player can opt into a rematch during a 20-second server-enforced window. Only unanimous votes launch a fresh 3–2–1 countdown, map, and scores. An expired vote leaves the room open on the final result until players leave; no round starts on its own.
+- Rematch votes are server-validated, duplicate votes are ignored, and late joiners/reconnections participate while the window remains open. Mobile movement/aim controls are hidden when the result is displayed.
+
 ## 1.7.1
 
 - Compact the Create/Join form on phones. Retain “Small tanks. Big rivalries.” as a single-line tagline while hiding the arena header and controls in the form view, tightening form spacing, and scrolling to the top when it opens so the submit button stays in view.
