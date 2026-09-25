@@ -2,6 +2,11 @@
 
 Record user-visible additions, balance changes and fixes here with each release. Release versions must match `shared.js`, `package.json` and `package-lock.json`.
 
+## 1.7.1
+
+- Compact the Create/Join form on phones. Retain “Small tanks. Big rivalries.” as a single-line tagline while hiding the arena header and controls in the form view, tightening form spacing, and scrolling to the top when it opens so the submit button stays in view.
+- Keep the main room browser and gameplay layouts unchanged.
+
 ## 1.7.0
 
 - Raised background music gain from 0.10 to 0.30, leaving effects levels and independent Music/Effects switches unchanged.
